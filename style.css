@@ -1,0 +1,234 @@
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	background-color: black;
+	color: white;
+	font-family: StalinOne-Regular;
+	font-size: 14px;
+	padding: 0;
+	margin: 0;
+}
+
+a,
+a:visited {
+	color: white;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #EE4540;
+}
+
+button {
+	padding: 0;
+	background: none;
+	border: none;
+	font-family: StalinOne-Regular;
+	font-size: 14px;
+	color: white;
+	cursor: pointer;
+}
+
+.chat {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+	padding: 1em;
+	padding-bottom: 0;
+	/* min-height: 100vh; */
+}
+
+.chat:last-child {
+	padding: 1em;
+}
+
+.chat:empty {
+	padding-top: 0;
+}
+
+.b {
+	position: relative;
+	display: flex;
+	align-items: center;
+	white-space: break-spaces;
+}
+
+.b:before {
+	content: ">";
+	margin-right: 0.6em;
+}
+
+.b .cursor {
+	position: relative;
+}
+
+.b.current .cursor:before {
+	content: "";
+	position: absolute;
+	display: block;
+	height: 1.5em;
+	width: 1.5px;
+	bottom: 0;
+	background: white;
+	opacity: 1;
+}
+
+body.focus .current .cursor:before {
+	animation: blink 1.2s linear infinite;
+}
+
+@keyframes blink {
+	0% {
+		opacity: 1;
+	}
+
+	30% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 1;
+	}
+}
+
+input#command_input {
+	font-family: inherit;
+	font-size: inherit;
+	color: white;
+	background: none;
+	border: none;
+}
+
+input#command_input {
+	outline: none;
+}
+
+.command {
+	border-bottom: 1px dashed #7b7b7b;
+}
+
+.command:hover {
+	color: #EE4540;
+}
+
+.text-rows {
+	display: flex;
+	flex-direction: column;
+}
+
+@media screen and (max-width: 768px) {
+	.text-rows {
+		gap: 0.6em;
+	}
+}
+
+.about {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6em;
+	padding: 1em;
+	border: 1px solid #7b7b7b;
+	width: 768px;
+	max-width: 100%;
+}
+
+.about p {
+	padding: 0;
+	margin: 0;
+}
+
+.contact-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+}
+
+.contact-cols {
+	display: flex;
+	gap: 1em;
+}
+
+@media screen and (max-width: 768px) {
+	.contact-cols {
+		flex-direction: column;
+	}
+}
+
+.contact {
+	padding: 1em;
+	border: 1px solid #7b7b7b;
+}
+
+.contact:hover {
+	border-color: #EE4540;
+	text-decoration: none;
+}
+
+form.feedback {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 1em;
+	padding: 1em;
+	border: 1px solid #7b7b7b;
+}
+
+form.feedback.success {
+	border-color: #274c2d;
+}
+
+form.feedback input,
+form.feedback textarea {
+	font-family: StalinOne-Regular;
+	font-size: 14px;
+	color: black;
+	background: white;
+	border: none;
+	width: 100%;
+}
+
+form.feedback button {
+	padding: 0.6em;
+	border: 1px solid #7b7b7b;
+}
+
+form.feedback .error {
+	color: red;
+}
+
+form.feedback .error.hide {
+	display: none;
+}
+
+.block-rows {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 1em;
+	padding: 1em;
+	border: 1px solid #7b7b7b;
+}
+
+.text {
+	font-family: Comfortaa;
+	font-size: 16px;
+	line-height: 1.6;
+}
+
+.text h2 {
+	margin-bottom: 0;
+}
+
+.text a {
+	text-decoration: underline;
+}
+
+.text ul {
+	margin: 0;
+}
