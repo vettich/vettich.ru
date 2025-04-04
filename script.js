@@ -14,6 +14,8 @@ class CurrentCommand {
 		this.reset();
 		this.input.focus();
 		this.initHandlers();
+
+		this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 	}
 
 	initHandlers() {
@@ -66,20 +68,30 @@ class CurrentCommand {
 		this.reset();
 	}
 
-	applyAnswer(text) {
+	applyAnswer(text, updateId = null) {
+		if (updateId) {
+			const element = document.getElementById(updateId);
+			if (element) {
+				element.outerHTML = text;
+				return;
+			}
+		}
+
 		const savedB = document.createElement('div');
 		savedB.className = 'b';
 		savedB.innerText = this.customInput ?? this.input.value;
-		chat.appendChild(savedB);
+		this.chat.appendChild(savedB);
 
 		const a = document.createElement('div')
 		a.className = 'a'
-		a.innerHTML = text
-		chat.appendChild(a);
-
-		if (!this.customInput) {
-			this.input.value = '';
+		if (text instanceof HTMLElement) {
+			a.appendChild(text)
+		} else {
+			a.innerHTML = text
 		}
+		this.chat.appendChild(a);
+
+		if (!this.customInput) this.input.value = '';
 	}
 
 	/**
@@ -157,7 +169,7 @@ class CurrentCommand {
 			return;
 		}
 
-		const [name, args] = cmdF.split(' ', 2);
+		const [name, args] = splitByFirstSpace(cmdF);
 
 		// Выполняем команду, или выводим сообщение об отсутствии команды
 		this.customInput = customCommand;
@@ -166,6 +178,36 @@ class CurrentCommand {
 		this.customInput = '';
 		this.toLastAnswer();
 	}
+
+
+	playTone(frequency = 440, duration = 0.3) {
+		const audioContext = this.audioContext;
+		const oscillator = audioContext.createOscillator();
+		const gainNode = audioContext.createGain();
+
+		oscillator.type = 'sine';
+		oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+		gainNode.gain.setValueAtTime(0.9, audioContext.currentTime);
+		gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+		oscillator.connect(gainNode);
+		gainNode.connect(audioContext.destination);
+
+		oscillator.start();
+		oscillator.stop(audioContext.currentTime + duration);
+	}
+}
+
+function splitByFirstSpace(str) {
+	const firstSpaceIndex = str.indexOf(' '); // Находим индекс первого пробела
+	if (firstSpaceIndex === -1) {
+		// Если пробела нет, возвращаем оригинальную строку в массиве
+		return [str];
+	}
+	const firstPart = str.slice(0, firstSpaceIndex); // Часть до пробела
+	const secondPart = str.slice(firstSpaceIndex + 1); // Часть после пробела
+	return [firstPart, secondPart]; // Возвращаем массив с двумя частями
 }
 
 // Список доступных команд
@@ -236,9 +278,169 @@ const commands = {
 			'</div>',
 		].join(''))
 	},
+	async breath(args) {
+		if (!args) return this.applyAnswer(`
+			Usage: breath [duration] [inhale-hold-exhale-hold]
+			<br>
+			Example: <button class="command">breath 10m 4-8-8-8</button>
+			<br>
+			Example: <button class="command">breath 2m 2-2-2-2</button>
+		`);
+
+		// Парсинг и валидация
+		let [durationStr, patternStr] = args.split(' ');
+		const [inhale, holdIn, exhale, holdOut] = patternStr.split('-').map(Number);
+		if (!durationStr || !patternStr || patternStr.split('-').length !== 4) {
+			return this.applyAnswer('Invalid format. Example: <button class="command">breath 1m30s 4-0-10-10</button>');
+		}
+
+		// Разбиваем время на фазы
+		const phases = [
+			{ name: 'Inhale', duration: inhale },
+			{ name: 'Hold', duration: holdIn },
+			{ name: 'Exhale', duration: exhale },
+			{ name: 'Hold', duration: holdOut }
+		];
+		const icons = {
+			'Inhale': '<span class="inhale">Inhale</span>',
+			'Exhale': '<span class="exhale">Exhale</span>',
+		};
+
+		// Логика таймера
+		const timerId = `breath-${Date.now()}`;
+		let elementsCache = {}; // Храним ссылки на элементы
+		let isStopped = false;
+		let prevPhase;
+
+		const createUI = () => {
+			const container = document.createElement('div');
+			container.id = timerId;
+			container.className = 'breath-container';
+			container.innerHTML = `
+				<div class="cycle-count"></div>
+				<div class="phase-main">
+					<span class="phase-name"></span>
+					<span class="counter"></span>
+				</div>
+				<div class="phase-next"></div>
+				<button class="stop-button">█ Stop</button>
+			`;
+
+			// Сохраняем ссылки на элементы
+			elementsCache = {
+				cycleCount: container.querySelector('.cycle-count'),
+				phaseName: container.querySelector('.phase-name'),
+				counter: container.querySelector('.counter'),
+				nextPhase: container.querySelector('.phase-next'),
+				stopButton: container.querySelector('.stop-button')
+			};
+
+			elementsCache.stopButton.onclick = () => isStopped = true;
+
+			// Первоначальное добавление в DOM
+			this.applyAnswer(container);
+		};
+
+
+		const updateUI = (phase, nextPhase, timeLeft, currentCycle, totalCycles) => {
+			// Создаем элементы при первом вызове
+			if (!document.getElementById(timerId)) {
+				createUI();
+				console.log(elementsCache)
+			}
+
+			// Обновляем только необходимые свойства
+			elementsCache.cycleCount.textContent = `${currentCycle}/${totalCycles}`;
+			elementsCache.phaseName.innerHTML = icons[phase] || phase;
+			elementsCache.counter.textContent = `${timeLeft}s`;
+			elementsCache.nextPhase.textContent = nextPhase ? `Next: ${nextPhase}` : '';
+
+			// Проигрываем звук
+			const phaseChanged = prevPhase !== phase;
+			if (phaseChanged) {
+				if (phase === 'Inhale') this.playTone(530);
+				if (phase === 'Exhale') this.playTone(480);
+				if (phase === 'Hold') this.playTone(660);
+				prevPhase = phase;
+			}
+		};
+
+		const updateCompletedUI = (duration, currentCycle, totalCycles) => {
+			const content = `
+				<div id="${timerId}" class="breath-container">
+					<div class="cycle-count">${currentCycle}/${totalCycles}</div>
+					<div class="phase-main">Completed in ${duration}</div>
+				</div>
+			`;
+			this.applyAnswer(content, timerId);
+		};
+
+		try {
+			const totalSeconds = parseDuration(durationStr);
+			const cycleDuration = inhale + holdIn + exhale + holdOut;
+			const totalCycles = Math.ceil(totalSeconds / cycleDuration);
+			const startAt = new Date();
+
+			let cycle = 1;
+			for (; cycle <= totalCycles && !isStopped; cycle++) {
+				for (let i = 0; i < phases.length && !isStopped; i++) {
+					const currentPhase = phases[i];
+					const nextPhase = phases[i + 1]?.name || phases[0]?.name;
+
+					for (let t = currentPhase.duration; t > 0; t--) {
+						if (isStopped) break;
+						updateUI(currentPhase.name, nextPhase, t, cycle, totalCycles);
+						await new Promise(r => setTimeout(r, 1000));
+					}
+				}
+			}
+
+			const endAt = new Date();
+			const duration = formatDuration(endAt - startAt);
+			updateCompletedUI(duration, cycle, totalCycles);
+		} catch (e) {
+			this.applyAnswer(`Error: ${e.message}`);
+		}
+	},
 	clear() {
 		this.clear();
 	},
+}
+
+function formatDuration(duration) {
+	duration = duration / 1000;
+	const hours = Math.floor(duration / 3600);
+	const minutes = Math.floor((duration % 3600) / 60);
+	const seconds = Math.floor(duration % 60);
+	return [[hours, 'h'], [minutes, 'm'], [seconds, 's']]
+		.filter(([value]) => value)
+		.map(([value, unit]) => `${value}${unit}`)
+		.join(' ');
+}
+
+function parseDuration(duration) {
+	const regex = /(\d+)([hms])/g; // Регулярное выражение для поиска чисел и единиц
+	let totalSeconds = 0;
+	let match;
+
+	while ((match = regex.exec(duration)) !== null) {
+		const value = parseInt(match[1], 10); // Числовое значение
+		const unit = match[2]; // Единица измерения
+
+		switch (unit) {
+			case 'h':
+				totalSeconds += value * 3600; // 1 час = 3600 секунд
+				break;
+			case 'm':
+				totalSeconds += value * 60; // 1 минута = 60 секунд
+				break;
+			case 's':
+				totalSeconds += value; // 1 секунда
+				break;
+		}
+	}
+
+	return totalSeconds; // Возвращаем общее количество секунд
 }
 
 const commandsSortedList = Object.keys(commands).sort()
