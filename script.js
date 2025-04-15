@@ -16,6 +16,7 @@ class CurrentCommand {
 		this.initHandlers();
 
 		this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		this.audioBuffers = {}; // Хранилище предзагруженных аудио
 	}
 
 	initHandlers() {
@@ -179,7 +180,6 @@ class CurrentCommand {
 		this.toLastAnswer();
 	}
 
-
 	playTone(frequency = 440, duration = 0.3) {
 		const audioContext = this.audioContext;
 		const oscillator = audioContext.createOscillator();
@@ -196,6 +196,49 @@ class CurrentCommand {
 
 		oscillator.start();
 		oscillator.stop(audioContext.currentTime + duration);
+	}
+
+	/**
+	 * Предзагружает аудио файлы
+	 * @param {Object} audioFiles - Объект с ключами и путями к файлам {click: 'sounds/click.mp3'}
+	 */
+	async preloadAudios(audioFiles) {
+		for (const [name, url] of Object.entries(audioFiles)) {
+			if (this.audioBuffers[name]) {
+				continue;
+			}
+			try {
+				const response = await fetch(url);
+				const arrayBuffer = await response.arrayBuffer();
+				this.audioBuffers[name] = await this.audioContext.decodeAudioData(arrayBuffer);
+			} catch (e) {
+				console.error(`Failed to load audio ${name}:`, e);
+			}
+		}
+	}
+
+	/**
+	* Воспроизводит предзагруженный аудиофайл
+	* @param {string} name - Ключ аудио
+	* @param {number} [volume=1] - Громкость (0-1)
+	*/
+	playAudio(name, volume = 1) {
+		if (!this.audioBuffers[name]) {
+			console.warn(`Audio "${name}" not loaded`);
+			return;
+		}
+
+		const source = this.audioContext.createBufferSource();
+		const gainNode = this.audioContext.createGain();
+
+		source.buffer = this.audioBuffers[name];
+		gainNode.gain.value = volume;
+
+		source.connect(gainNode);
+		gainNode.connect(this.audioContext.destination);
+
+		source.start();
+		return source;
 	}
 }
 
@@ -277,6 +320,9 @@ const commands = {
 			`<p>Programming is the part of my life that closes the need to create. It's a great thing to have an idea and turn it into the reality I live in.</p>`,
 			'</div>',
 		].join(''))
+	},
+	clear() {
+		this.clear();
 	},
 	async breath(args) {
 		if (!args) return this.applyAnswer(`
@@ -402,9 +448,208 @@ const commands = {
 			this.applyAnswer(`Error: ${e.message}`);
 		}
 	},
-	clear() {
-		this.clear();
+	game(name) {
+		if (name) {
+			const [gameName, ...args] = name.split(' ');
+			if (games[gameName]) {
+				return games[gameName].run.call(this, ...args);
+			}
+			return this.applyAnswer(`Game not found. Available games: ${Object.keys(games).map(g => `<button class="command">game ${g}</button>`).join(', ')}`);
+		}
+
+		// Вывод списка игр
+		const renderGame = (game) => `
+            <div class="game-item">
+                <button class="command" data-cmd="game ${game}">${games[game].name}</button>
+                <div class="game-description">${games[game].description}</div>
+            </div>
+        `;
+
+		this.applyAnswer(`
+            <div class="games-list">
+                <h3>Available games:</h3>
+                ${Object.keys(games).map(renderGame).join('')}
+            </div>
+        `);
 	},
+	games() {
+		this.commands.game.call(this);
+	}
+}
+
+const games = {
+	mem: {
+		name: "Visual memory",
+		description: "Trains your photographic memory",
+		run(sizeStr) {
+			const size = parseInt(sizeStr) || 4;
+			if (isNaN(size) || size < 2 || size > 10) {
+				return this.applyAnswer('Invalid size. Use number between 2-10. Example: <button class="command">mempic 6</button>');
+			}
+
+			this.preloadAudios({
+				gameStart: 'assets/sounds/game-start.mp3',
+				// gameEnd: 'assets/sounds/game-end.mp3',
+				gamePerfect: 'assets/sounds/game-perfect.mp3'
+			});
+
+			const gameId = `mempic-${Date.now()}`;
+			let correctCells = [];
+			let mistakes = 0;
+			let isPreviewPhase = true;
+			let countdownTimer;
+
+			// Создаем контейнер игры
+			const container = document.createElement('div');
+			container.id = gameId;
+			container.className = 'mempic-container';
+
+			// Создаем игровое поле
+			const grid = document.createElement('div');
+			grid.className = 'mempic-grid';
+			grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+			// Создаем ячейки
+			const cells = Array.from({ length: size * size }, (_, i) => {
+				const cell = document.createElement('div');
+				cell.className = 'mempic-cell';
+				cell.dataset.index = i;
+				return cell;
+			});
+
+			// Таймер
+			const timer = document.createElement('div');
+			timer.className = 'mempic-timer';
+
+			// Кнопка старта
+			const startBtn = document.createElement('button');
+			startBtn.className = 'mempic-start';
+			startBtn.textContent = 'Start';
+			startBtn.onclick = () => {
+				startBtn.remove();
+				isPreviewPhase = true;
+				startGame();
+				// this.playTone(660, 0.5); // Звук начала игры
+				this.playAudio('gameStart');
+			};
+
+			// Логика таймера
+			const updateTimer = (seconds) => {
+				timer.textContent = seconds > 0 ? `${seconds}s` : 'Go!';
+				if (seconds === 0) {
+					setTimeout(() => {
+						timer.textContent = ''
+						timer.classList.add('hidden');
+					}, 1000);
+				} else if (timer.classList.contains('hidden')) {
+					timer.classList.remove('hidden');
+				}
+			};
+
+			// Логика игры
+			const startGame = () => {
+				// Сбрасываем предыдущее состояние
+				clearInterval(countdownTimer);
+				cells.forEach(c => {
+					c.classList.remove('correct', 'wrong', 'has-dot', 'active');
+				});
+
+				// Выбираем случайные ячейки
+				correctCells = [];
+				mistakes = 0;
+				const targetCells = Math.floor(size * 1.5);
+				while (correctCells.length < targetCells) {
+					const rnd = Math.floor(Math.random() * cells.length);
+					if (!correctCells.includes(rnd)) correctCells.push(rnd);
+				}
+
+				// Показываем кружки и таймер
+				updateTimer(3)
+				cells.forEach((cell, i) => {
+					cell.classList.toggle('has-dot', correctCells.includes(i));
+				});
+
+				// Обратный отсчет
+				// Через 3 секунды скрываем и включаем ввод
+				let seconds = 3;
+				countdownTimer = setInterval(() => {
+					seconds--;
+					updateTimer(seconds);
+
+					if (seconds === 0) {
+						clearInterval(countdownTimer);
+						cells.forEach(cell => cell.classList.remove('has-dot'));
+						isPreviewPhase = false;
+						cells.forEach(cell => cell.classList.add('active'));
+						// this.playTone(880, 0.3); // Звук начала фазы угадывания
+					}
+				}, 1000);
+			};
+
+			// Обработчик кликов
+			const handleClick = (e) => {
+				if (isPreviewPhase) return;
+
+				const cell = e.target.closest('.mempic-cell');
+				if (!cell || cell.classList.contains('correct')) return;
+
+				const index = parseInt(cell.dataset.index);
+				const isCorrect = correctCells.includes(index);
+
+				if (isCorrect) {
+					cell.classList.add('correct');
+					correctCells = correctCells.filter(i => i !== index);
+					this.playTone(523, 0.1); // Звук правильного ответа
+				} else {
+					cell.classList.add('wrong');
+					mistakes++;
+					this.playTone(220, 0.3); // Звук ошибки
+				}
+
+				// Проверка завершения
+				if (correctCells.length === 0) {
+					cells.forEach(c => c.classList.remove('active'));
+					const result = document.createElement('div');
+					result.className = 'mempic-result';
+					result.innerHTML = mistakes === 0
+						? `🎉 Perfect! No mistakes! <button class="mempic-restart">Play Again</button>`
+						: `❌ ${mistakes} mistakes. <button class="mempic-restart">Try Again</button>`;
+
+					result.querySelector('.mempic-restart').onclick = () => {
+						cells.forEach(c => {
+							c.classList.remove('correct', 'wrong');
+							grid.appendChild(c);
+						});
+						container.innerHTML = '';
+						container.append(timer, grid);
+						startBtn.onclick()
+					};
+
+					container.appendChild(result);
+					mistakes === 0 ? this.playAudio('gamePerfect') : this.playTone(440, 0.5);
+					// this.playTone(mistakes === 0 ? 1046 : 440, 0.5); // Звук завершения
+				}
+			};
+
+			// Собираем интерфейс
+			grid.append(...cells);
+			container.append(timer, grid, startBtn);
+			container.addEventListener('click', handleClick);
+			this.applyAnswer(container);
+		},
+	}
+}
+
+const commandsSortedList = Object.keys(commands).sort()
+
+const commandsHelps = {
+	contacts: 'Shows my contacts',
+	projects: 'Shows my projects',
+	game: "Start a game (game [name])",
+	games: "Show available games (alias for 'game')",
+	about: 'A little bit about me',
+	// feedback: 'Write me a message',
+	clear: 'Clear the screen from commands',
 }
 
 function formatDuration(duration) {
@@ -443,16 +688,6 @@ function parseDuration(duration) {
 	return totalSeconds; // Возвращаем общее количество секунд
 }
 
-const commandsSortedList = Object.keys(commands).sort()
-
-const commandsHelps = {
-	contacts: 'Shows my contacts',
-	projects: 'Shows my projects',
-	about: 'A little bit about me',
-	// feedback: 'Write me a message',
-	clear: 'Clear the screen from commands',
-}
-
 function sendFeedback(event) {
 	event.preventDefault();
 
@@ -474,6 +709,12 @@ function sendFeedback(event) {
 	event.target.innerHTML = 'Your message has been successfully sent.<br>Thank you for your feedback!'
 	event.target.classList.add('success')
 }
+
+///////////////////////
+//
+//      initial
+//
+///////////////////////
 
 const cmd = new CurrentCommand(commands, commandsHelps);
 

@@ -316,3 +316,141 @@ form.feedback .error.hide {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(30%); }
 }
+
+
+.games-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    padding: 1em;
+}
+.game-item {
+    border: 1px solid #7b7b7b;
+    padding: 1em;
+    transition: all 0.3s;
+}
+.game-item:hover {
+    border-color: #EE4540;
+}
+.game-description {
+    margin-top: 0.5em;
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+
+/* Memory Picture Game */
+.mempic-container {
+    border: 1px solid #7b7b7b;
+    padding: 1em;
+    margin: 1em 0;
+    max-width: 100%;
+		min-height: 85vh;
+    overflow: hidden;
+}
+
+.mempic-grid {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 1em;
+    width: 100%;
+    max-width: min(70vh, 90vw); /* Ограничиваем максимальный размер */
+    margin: 0 auto; /* Центрируем */
+}
+
+.mempic-cell {
+    aspect-ratio: 1;
+    background: #222;
+    border: 1px solid #7b7b7b;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mempic-cell.active:hover {
+    background: #333;
+    transform: scale(0.98);
+}
+
+.mempic-cell.correct::after,
+.mempic-cell.has-dot::after {
+    content: '';
+    width: 60%;
+    height: 60%;
+    background: #EE4540;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(238, 69, 64, 0.5);
+}
+
+.mempic-cell.wrong::after {
+    content: '✖';
+    color: #EE4540;
+    font-size: 1.8em;
+    line-height: 1;
+}
+
+.mempic-start,
+.mempic-restart {
+    background: #222;
+    border: 1px solid #EE4540 !important;
+    padding: 0.8em 1.5em !important;
+    margin: 1em auto;
+    display: block;
+    font-size: 1.1em;
+    transition: all 0.3s;
+    border-radius: 4px;
+}
+
+.mempic-start:hover,
+.mempic-restart:hover {
+    background: #EE4540;
+    color: black !important;
+    transform: translateY(-2px);
+}
+
+.mempic-result {
+    text-align: center;
+    padding: 1em;
+    font-size: 1.2em;
+    line-height: 1.6;
+}
+
+@media screen and (max-width: 768px) {
+    .mempic-grid {
+        gap: 6px;
+    }
+
+    .mempic-start,
+    .mempic-restart {
+        padding: 0.7em 1.2em !important;
+    }
+}
+
+.mempic-timer {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(238, 69, 64, 0.2);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 1.2em;
+    color: #EE4540;
+}
+
+.mempic-timer.hidden {
+	display: none;
+}
+
+/* Анимация для таймера */
+@keyframes mempic-timer-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.mempic-timer {
+    animation: mempic-timer-pulse 1s infinite;
+}
