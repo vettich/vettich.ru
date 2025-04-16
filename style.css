@@ -328,6 +328,20 @@ form.feedback .error.hide {
 }
 
 
+/* Полноэкранный режим игры */
+.game-fullscreen {
+    position: fixed !important;
+		inset: 0 !important;
+    margin: 0 !important;
+    padding: 20px !important;
+		border: none !important;
+    z-index: 1000 !important;
+    background: black !important;
+    overflow: auto !important;
+}
+
+
+/* Список игр */
 .games-list {
     display: flex;
     flex-direction: column;
@@ -355,10 +369,21 @@ form.feedback .error.hide {
     padding: 1em;
     margin: 1em 0;
     max-width: 100%;
-		min-height: 85vh;
     overflow: hidden;
 		-webkit-user-select: none;
     user-select: none;
+}
+
+.mempic-container.game-fullscreen {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+@media screen and (max-width: 768px) {
+  .mempic-container.game-fullscreen {
+		justify-content: end;
+  }
 }
 
 .mempic-grid {
@@ -389,6 +414,21 @@ form.feedback .error.hide {
     transform: scale(0.98);
 }
 
+.mempic-cell.correct {
+	animation: correctBounce 0.3s ease-out;
+}
+
+@keyframes correctBounce {
+    0%, 100% {
+			border-color: #7b7b7b;
+			box-shadow: 0 0 0px -6px #7b7b7b;
+		}
+    50% {
+			border-color: #6fff20;
+			box-shadow: 0 0 16px -6px #6fff20;
+		}
+}
+
 .mempic-cell.correct::after,
 .mempic-cell.has-dot::after {
     content: '';
@@ -406,7 +446,32 @@ form.feedback .error.hide {
     line-height: 1;
 }
 
+.mempic-cell.missed {
+    position: relative;
+    overflow: hidden;
+}
+
+.mempic-cell.missed::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(238, 69, 64, 0);
+}
+
+.mempic-cell.missed-animate::before {
+    animation: missedPulse 1.5s ease-out;
+}
+
+@keyframes missedPulse {
+    0% { background: rgba(238, 69, 64, 0.8); }
+    100% { background: rgba(238, 69, 64, 0); }
+}
+
 .mempic-start,
+.mempic-stop,
 .mempic-restart {
     background: #222;
     border: 1px solid #EE4540 !important;
@@ -418,7 +483,13 @@ form.feedback .error.hide {
     border-radius: 4px;
 }
 
+.mempic-stop,
+.mempic-restart {
+	margin: 0;
+}
+
 .mempic-start:hover,
+.mempic-stop:hover,
 .mempic-restart:hover {
     background: #EE4540;
     color: black !important;
@@ -432,12 +503,28 @@ form.feedback .error.hide {
     line-height: 1.6;
 }
 
+.mempic-result-buttons {
+	display: flex;
+	justify-content: center;
+	gap: 2em;
+	margin-top: 0.8em;
+}
+
+.mempic-result .mempic-stop {
+	display: none;
+}
+
+.game-fullscreen .mempic-result .mempic-stop {
+	display: block;
+}
+
 @media screen and (max-width: 768px) {
     .mempic-grid {
         gap: 6px;
     }
 
     .mempic-start,
+		.mempic-stop,
     .mempic-restart {
         padding: 0.7em 1.2em !important;
     }
@@ -452,6 +539,7 @@ form.feedback .error.hide {
     border-radius: 20px;
     font-size: 1.2em;
     color: #EE4540;
+		z-index: 2000;
 }
 
 .mempic-timer.hidden {
@@ -467,4 +555,32 @@ form.feedback .error.hide {
 
 .mempic-timer {
     animation: mempic-timer-pulse 1s infinite;
+}
+
+.mempic-progress {
+    text-align: center;
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background: rgba(0,0,0,0.3);
+    border-radius: 20px;
+}
+
+.progress-count {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+}
+
+.progress-track {
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #EE4540;
+    transition: width 0.3s, background 0.3s;
 }

@@ -246,6 +246,43 @@ class CurrentCommand {
 		source.start();
 		return source;
 	}
+
+	/**
+		 * Переводит игру в полноэкранный режим
+		 * @param {HTMLElement} container - Контейнер игры
+		 */
+	enableFullscreenMode(container) {
+		// Если уже есть контейнер, то ничего не делаем
+		if (document.querySelector('.game-fullscreen')) {
+			return;
+		}
+
+		// Сохраняем оригинальные стили
+		this.originalStyles = {
+			bodyOverflow: document.body.style.overflow,
+			chatDisplay: this.chat.style.display,
+			inputDisplay: this.input.parentElement.style.display
+		};
+
+		// Применяем полноэкранные стили
+		container.classList.add('game-fullscreen');
+		document.body.style.overflow = 'hidden';
+		// this.chat.style.display = 'none';
+		this.input.parentElement.style.display = 'none';
+	}
+
+	/**
+	 * Выход из полноэкранного режима
+	 */
+	disableFullscreenMode() {
+		const fullscreenContainer = document.querySelector('.game-fullscreen');
+		if (fullscreenContainer) {
+			fullscreenContainer.classList.remove('game-fullscreen');
+			document.body.style.overflow = this.originalStyles.bodyOverflow;
+			this.chat.style.display = this.originalStyles.chatDisplay;
+			this.input.parentElement.style.display = this.originalStyles.inputDisplay;
+		}
+	}
 }
 
 function splitByFirstSpace(str) {
@@ -503,11 +540,15 @@ const games = {
 			let mistakes = 0;
 			let isPreviewPhase = true;
 			let countdownTimer;
+			let totalCorrectCells = Math.floor(size * 1.5);
 
 			// Создаем контейнер игры
 			const container = document.createElement('div');
 			container.id = gameId;
 			container.className = 'mempic-container';
+
+			// Создаем footer
+			const footer = document.createElement('div');
 
 			// Создаем игровое поле
 			const grid = document.createElement('div');
@@ -524,6 +565,12 @@ const games = {
 				return cell;
 			});
 
+			// Панель прогресса
+			const progressBar = document.createElement('div');
+			progressBar.className = 'mempic-progress';
+			progressBar.innerHTML = `<span class="progress-count">0 / ${totalCorrectCells}</span>
+                                <div class="progress-track"><div class="progress-fill"></div></div>`;
+
 			// Таймер
 			const timer = document.createElement('div');
 			timer.className = 'mempic-timer hidden';
@@ -533,10 +580,40 @@ const games = {
 			startBtn.className = 'mempic-start';
 			startBtn.textContent = 'Start';
 			startBtn.onclick = () => {
-				startBtn.remove();
+				this.enableFullscreenMode(container);
 				isPreviewPhase = true;
 				startGame();
 				this.playAudio('gameStart');
+			};
+
+			// Кнопка остановки
+			const stopBtn = document.createElement('button');
+			stopBtn.className = 'mempic-stop';
+			stopBtn.textContent = 'Стоп';
+			stopBtn.onclick = () => {
+				this.disableFullscreenMode();
+				finishGame();
+			};
+
+			// Логика обновления прогресса
+			const updateProgress = () => {
+				const found = totalCorrectCells - correctCells.length;
+				const accuracy = mistakes > 0 ? ` (Errors: ${mistakes})` : '';
+				progressBar.querySelector('.progress-count').textContent =
+					`${found} / ${totalCorrectCells}${accuracy}`;
+
+				// Анимация заполнения
+				const fillPercent = (found / totalCorrectCells) * 100;
+				progressBar.querySelector('.progress-fill').style.width = `${fillPercent}%`;
+
+				// Цвет в зависимости от прогресса
+				if (fillPercent > 80) {
+					progressBar.querySelector('.progress-fill').style.backgroundColor = '#4CAF50';
+				} else if (fillPercent > 50) {
+					progressBar.querySelector('.progress-fill').style.backgroundColor = '#FFC107';
+				} else {
+					progressBar.querySelector('.progress-fill').style.backgroundColor = '#EE4540';
+				}
 			};
 
 			// Логика таймера
@@ -552,6 +629,50 @@ const games = {
 				}
 			};
 
+			// Логика завершения игры
+			const finishGame = () => {
+				const success = mistakes === 0 && correctCells.length === 0;
+
+				clearInterval(countdownTimer);
+				cells.forEach(c => c.classList.remove('active'));
+
+				// Показываем пропущенные ячейки с анимацией
+				correctCells.forEach(index => {
+					const cell = cells[index];
+					cell.classList.add('missed', 'has-dot');
+					setTimeout(() => {
+						cell.classList.add('missed-animate');
+					}, 100);
+				});
+
+				const resultMistakes = mistakes ?? mistakes + correctCells.length;
+				const message = success ? '🎉 Perfect! No mistakes!' : `❌ ${resultMistakes} mistakes.`
+				const restartText = success ? 'Play Again' : 'Try Again';
+
+				const result = document.createElement('div');
+				result.className = 'mempic-result';
+				result.innerHTML = `${message}
+						<div class="mempic-result-buttons">
+							<button class="mempic-restart">${restartText}</button>
+							<button class="mempic-stop">Quit</button>
+						</div>`;
+
+				result.querySelector('.mempic-restart').onclick = () => {
+					cells.forEach(c => {
+						c.classList.remove('correct', 'wrong');
+					});
+					startBtn.onclick();
+				};
+
+				result.querySelector('.mempic-stop').onclick = () => {
+					stopBtn.onclick();
+				};
+
+				footer.innerHTML = '';
+				footer.append(result);
+				success ? this.playAudio('gamePerfect') : this.playTone(440, 0.5);
+			}
+
 			// Логика игры
 			const startGame = () => {
 				// Сбрасываем предыдущее состояние
@@ -559,12 +680,14 @@ const games = {
 				cells.forEach(c => {
 					c.classList.remove('correct', 'wrong', 'has-dot', 'active');
 				});
+				footer.innerHTML = '';
+				footer.style.opacity = '0';
+				footer.append(progressBar, stopBtn);
 
 				// Выбираем случайные ячейки
 				correctCells = [];
 				mistakes = 0;
-				const targetCells = Math.floor(size * 1.5);
-				while (correctCells.length < targetCells) {
+				while (correctCells.length < totalCorrectCells) {
 					const rnd = Math.floor(Math.random() * cells.length);
 					if (!correctCells.includes(rnd)) correctCells.push(rnd);
 				}
@@ -587,6 +710,8 @@ const games = {
 						cells.forEach(cell => cell.classList.remove('has-dot'));
 						isPreviewPhase = false;
 						cells.forEach(cell => cell.classList.add('active'));
+						footer.style.opacity = '1';
+						updateProgress();
 					}
 				}, 1000);
 			};
@@ -596,7 +721,7 @@ const games = {
 				if (isPreviewPhase) return;
 
 				const cell = e.target.closest('.mempic-cell');
-				if (!cell || cell.classList.contains('correct')) {
+				if (!cell || cell.classList.contains('correct') || !cell.classList.contains('active')) {
 					return;
 				}
 
@@ -615,33 +740,24 @@ const games = {
 					if (navigator.vibrate) navigator.vibrate(200);
 				}
 
+				// Завершаем игру при 3 ошибках или если достигнуто количество верных ячеек
+				if (mistakes >= 3 || (correctCells.length - mistakes) <= 0) {
+					finishGame();
+					return;
+				}
+
+				updateProgress();
+
 				// Проверка завершения
 				if (correctCells.length === 0) {
-					cells.forEach(c => c.classList.remove('active'));
-					const result = document.createElement('div');
-					result.className = 'mempic-result';
-					result.innerHTML = mistakes === 0
-						? `🎉 Perfect! No mistakes! <button class="mempic-restart">Play Again</button>`
-						: `❌ ${mistakes} mistakes. <button class="mempic-restart">Try Again</button>`;
-
-					result.querySelector('.mempic-restart').onclick = () => {
-						cells.forEach(c => {
-							c.classList.remove('correct', 'wrong');
-							grid.appendChild(c);
-						});
-						container.innerHTML = '';
-						container.append(timer, grid);
-						startBtn.onclick()
-					};
-
-					container.appendChild(result);
-					mistakes === 0 ? this.playAudio('gamePerfect') : this.playTone(440, 0.5);
+					finishGame();
 				}
 			};
 
 			// Собираем интерфейс
 			grid.append(...cells);
-			container.append(timer, grid, startBtn);
+			footer.append(startBtn);
+			container.append(timer, grid, footer);
 			container.addEventListener('click', handleClick);
 			this.applyAnswer(container);
 		},
