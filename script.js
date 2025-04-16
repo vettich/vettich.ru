@@ -27,11 +27,6 @@ class CurrentCommand {
 				this.input.focus();
 			}
 		})
-
-		// Отключаем выделение текста при тапах
-		document.addEventListener('touchstart', this.preventTouch, { passive: false });
-		document.addEventListener('touchend', this.preventTouch, { passive: false });
-		document.addEventListener('touchmove', this.preventTouch, { passive: false });
 	}
 
 	/**
@@ -56,13 +51,6 @@ class CurrentCommand {
 			case "Delete":
 				this.resetOrig();
 				break;
-		}
-	}
-
-	preventTouch(e) {
-		if (e.target.closest('.mempic-container')) {
-			e.preventDefault();
-			e.stopPropagation();
 		}
 	}
 
