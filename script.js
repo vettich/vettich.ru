@@ -21,6 +21,17 @@ class CurrentCommand {
 
 	initHandlers() {
 		this.input.addEventListener('keydown', event => this.keydownHandler(event))
+
+		document.addEventListener('click', event => {
+			if (event.target == document.body || event.target.closest('.command-input-container')) {
+				this.input.focus();
+			}
+		})
+
+		// Отключаем выделение текста при тапах
+		document.addEventListener('touchstart', this.preventTouch, { passive: false });
+		document.addEventListener('touchend', this.preventTouch, { passive: false });
+		document.addEventListener('touchmove', this.preventTouch, { passive: false });
 	}
 
 	/**
@@ -45,6 +56,13 @@ class CurrentCommand {
 			case "Delete":
 				this.resetOrig();
 				break;
+		}
+	}
+
+	preventTouch(e) {
+		if (e.target.closest('.mempic-container')) {
+			e.preventDefault();
+			e.stopPropagation();
 		}
 	}
 
@@ -489,7 +507,6 @@ const games = {
 
 			this.preloadAudios({
 				gameStart: 'assets/sounds/game-start.mp3',
-				// gameEnd: 'assets/sounds/game-end.mp3',
 				gamePerfect: 'assets/sounds/game-perfect.mp3'
 			});
 
@@ -514,12 +531,14 @@ const games = {
 				const cell = document.createElement('div');
 				cell.className = 'mempic-cell';
 				cell.dataset.index = i;
+				cell.setAttribute('role', 'button');
+				cell.setAttribute('aria-label', `Cell ${i}`);
 				return cell;
 			});
 
 			// Таймер
 			const timer = document.createElement('div');
-			timer.className = 'mempic-timer';
+			timer.className = 'mempic-timer hidden';
 
 			// Кнопка старта
 			const startBtn = document.createElement('button');
@@ -529,7 +548,6 @@ const games = {
 				startBtn.remove();
 				isPreviewPhase = true;
 				startGame();
-				// this.playTone(660, 0.5); // Звук начала игры
 				this.playAudio('gameStart');
 			};
 
@@ -581,7 +599,6 @@ const games = {
 						cells.forEach(cell => cell.classList.remove('has-dot'));
 						isPreviewPhase = false;
 						cells.forEach(cell => cell.classList.add('active'));
-						// this.playTone(880, 0.3); // Звук начала фазы угадывания
 					}
 				}, 1000);
 			};
@@ -591,7 +608,9 @@ const games = {
 				if (isPreviewPhase) return;
 
 				const cell = e.target.closest('.mempic-cell');
-				if (!cell || cell.classList.contains('correct')) return;
+				if (!cell || cell.classList.contains('correct')) {
+					return;
+				}
 
 				const index = parseInt(cell.dataset.index);
 				const isCorrect = correctCells.includes(index);
@@ -600,10 +619,12 @@ const games = {
 					cell.classList.add('correct');
 					correctCells = correctCells.filter(i => i !== index);
 					this.playTone(523, 0.1); // Звук правильного ответа
+					if (navigator.vibrate) navigator.vibrate(50);
 				} else {
 					cell.classList.add('wrong');
 					mistakes++;
 					this.playTone(220, 0.3); // Звук ошибки
+					if (navigator.vibrate) navigator.vibrate(200);
 				}
 
 				// Проверка завершения
@@ -627,7 +648,6 @@ const games = {
 
 					container.appendChild(result);
 					mistakes === 0 ? this.playAudio('gamePerfect') : this.playTone(440, 0.5);
-					// this.playTone(mistakes === 0 ? 1046 : 440, 0.5); // Звук завершения
 				}
 			};
 
@@ -754,9 +774,9 @@ document.addEventListener('click', function (event) {
 		cmd.run(event.target.dataset.cmd ?? event.target.innerText);
 		cmd.toLastAnswer();
 	} else {
-		if (event.pointerType == 'touch' && !isInput(event.target)) {
-			cmd.input.focus();
-		}
+		// if (event.pointerType == 'touch' && !isInput(event.target)) {
+		// 	cmd.input.focus();
+		// }
 	}
 })
 
