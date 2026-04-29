@@ -162,76 +162,51 @@ function gamePinball(sizeStr) {
 	const simulateBallMovement = () => {
 		let x, y, dx, dy;
 		const gridSize = size + 2;
-		ballPath = []; // Сбрасываем траекторию
+		ballPath = [];
 
-		// Определяем начальную позицию и направление
 		const row = Math.floor(launchPosition.index / gridSize);
 		const col = launchPosition.index % gridSize;
 
 		switch (launchPosition.direction) {
-			case 'down':
-				x = col;
-				y = row + 1;
-				dx = 0;
-				dy = 1;
-				break;
-			case 'up':
-				x = col;
-				y = row - 1;
-				dx = 0;
-				dy = -1;
-				break;
-			case 'left':
-				x = col - 1;
-				y = row;
-				dx = -1;
-				dy = 0;
-				break;
-			case 'right':
-				x = col + 1;
-				y = row;
-				dx = 1;
-				dy = 0;
-				break;
+			case 'down':  x = col;     y = row + 1; dx = 0;  dy = 1;  break;
+			case 'up':    x = col;     y = row - 1; dx = 0;  dy = -1; break;
+			case 'left':  x = col - 1; y = row;     dx = -1; dy = 0;  break;
+			case 'right': x = col + 1; y = row;     dx = 1;  dy = 0;  break;
 		}
 
 		let steps = 0;
-		const maxSteps = size * size * 2; // Предотвращаем бесконечный цикл
+		const maxSteps = size * size * 2;
 
 		while (steps < maxSteps) {
-			const cellIndex = y * gridSize + x;
-			const cell = cells[cellIndex];
-
-			if (cell && cell.classList.contains('main-cell')) {
-				// Записываем направление входа
-				cell.dataset.ballDirIn = getDirectionName(dx, dy);
-				// Обновляем направление выхода
-				cell.dataset.ballDirOut = getDirectionName(dx, dy);
-				ballPath.push(cellIndex);
-			}
-
-			// Проверяем, не вышли ли за границы основного поля
+			// Сначала проверяем выход за границу
 			if (x <= 0 || x >= gridSize - 1 || y <= 0 || y >= gridSize - 1) {
-				// Находим индекс граничной ячейки
 				let exitIndex;
-				if (y <= 0) exitIndex = x; // Верхняя граница
-				else if (y >= gridSize - 1) exitIndex = (gridSize - 1) * gridSize + x; // Нижняя граница
-				else if (x <= 0) exitIndex = y * gridSize; // Левая граница
-				else if (x >= gridSize - 1) exitIndex = y * gridSize + (gridSize - 1); // Правая граница
-
+				if (y <= 0) exitIndex = x;
+				else if (y >= gridSize - 1) exitIndex = (gridSize - 1) * gridSize + x;
+				else if (x <= 0) exitIndex = y * gridSize;
+				else exitIndex = y * gridSize + (gridSize - 1);
 				correctExitPosition = exitIndex;
 				return;
 			}
 
-			// Проверяем, есть ли пин в этой клетке
+			const cellIndex = y * gridSize + x;
+			const dirIn = getDirectionName(dx, dy);
+
+			// Применяем отражение от пина (если есть)
 			const pin = pins.find(p => p.index === cellIndex);
 			if (pin) {
-				// Меняем направление в зависимости от типа пина
 				if (pin.type === '/') {
-					[dx, dy] = [-dy, -dx]; // Отражение от /
+					[dx, dy] = [-dy, -dx];
 				} else {
-					[dx, dy] = [dy, dx]; // Отражение от \
+					[dx, dy] = [dy, dx];
 				}
+			}
+
+			const dirOut = getDirectionName(dx, dy);
+
+			const cell = cells[cellIndex];
+			if (cell && cell.classList.contains('main-cell')) {
+				ballPath.push({ index: cellIndex, dirIn, dirOut });
 			}
 
 			x += dx;
@@ -239,81 +214,116 @@ function gamePinball(sizeStr) {
 			steps++;
 		}
 
-		// Добавляем направления к данным траектории
-		// ballPath.forEach((index, i) => {
-		// 	if (cells[index]) {
-		// 		cells[index].dataset.ballDirIn = pathDirections[i];
-		// 		cells[index].dataset.ballDirOut = pathDirections[i + 1] || pathDirections[i];
-		// 	}
-		// });
-
-		// Если шарик не вышел за пределы (не должно происходить)
 		correctExitPosition = -1;
 	};
 
 	const showBallPath = () => {
-		// Очищаем предыдущую траекторию
 		cells.forEach(cell => {
 			cell.classList.remove('ball-path', 'ball-path-change');
-			cell.innerHTML = '';
+			cell.querySelectorAll('svg.ball-path-svg').forEach(el => el.remove());
 		});
 
-		// Проходим по траектории и рисуем точки
+		// Возвращает [x%, y%] точки входа/выхода для данного направления движения
+		const dirToPoint = (dir, isEntry) => {
+			const pts = {
+				right: isEntry ? [5, 50]  : [95, 50],
+				left:  isEntry ? [95, 50] : [5, 50],
+				down:  isEntry ? [50, 5]  : [50, 95],
+				up:    isEntry ? [50, 95] : [50, 5],
+			};
+			return pts[dir] || [50, 50];
+		};
+
 		for (let i = 0; i < ballPath.length; i++) {
-			const cellIndex = ballPath[i];
+			const { index: cellIndex, dirIn, dirOut } = ballPath[i];
 			const cell = cells[cellIndex];
 			if (!cell || !cell.classList.contains('main-cell')) continue;
 
-			// Создаем контейнер для точек
-			const pointsContainer = document.createElement('div');
-			pointsContainer.className = 'ball-points-container';
+			const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			svg.setAttribute('viewBox', '0 0 100 100');
+			svg.setAttribute('class', 'ball-path-svg');
+			svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible;';
 
-			// Первая точка (вход)
-			const point1 = document.createElement('div');
-			point1.className = 'ball-point ball-point-in';
-			point1.dataset.direction = getDirection(cellIndex, ballPath[i + 1], size + 2);
+			const [x1, y1] = dirToPoint(dirIn, true);
+			const [x2, y2] = dirToPoint(dirOut, false);
 
-			// Вторая точка (выход)
-			const point2 = document.createElement('div');
-			point2.className = 'ball-point ball-point-out';
-			point2.dataset.direction = getDirection(cellIndex, ballPath[i + 1], size + 2);
+			const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+			line.setAttribute('x1', x1);
+			line.setAttribute('y1', y1);
+			line.setAttribute('x2', x2);
+			line.setAttribute('y2', y2);
+			line.setAttribute('stroke', '#6fc7ff');
+			line.setAttribute('stroke-width', '10');
+			line.setAttribute('stroke-linecap', 'round');
+			line.style.filter = 'drop-shadow(0 0 3px rgba(110,199,255,0.9))';
+			line.style.animation = `ball-path-appear 0.25s ${i * 0.04}s both`;
 
-			// Определяем направления
-			const prevDir = i > 0 ? getDirection(ballPath[i - 1], cellIndex, size + 2) : null;
-			const nextDir = i < ballPath.length - 1 ? getDirection(cellIndex, ballPath[i + 1], size + 2) : null;
-
-			// Если направление изменилось (был отскок)
-			if (prevDir && nextDir && prevDir !== nextDir) {
+			// Точка отскока — другой цвет
+			if (dirIn !== dirOut) {
+				line.setAttribute('stroke', '#ffb347');
+				line.style.filter = 'drop-shadow(0 0 3px rgba(255,179,71,0.9))';
 				cell.classList.add('ball-path-change');
-				point2.classList.add('ball-point-bounce');
 			}
 
-			pointsContainer.append(point1, point2);
-			cell.appendChild(pointsContainer);
-			cell.style.animationDelay = `${i * 0.05}s`;
+			svg.appendChild(line);
+			cell.appendChild(svg);
 			cell.classList.add('ball-path');
 		}
 	};
 
-	// Улучшенная функция определения направления
-	const getDirection = (fromIndex, toIndex, gridSize) => {
-		const fromRow = Math.floor(fromIndex / gridSize);
-		const fromCol = fromIndex % gridSize;
-		const toRow = Math.floor(toIndex / gridSize);
-		const toCol = toIndex % gridSize;
+	// Анимация движения шарика по траектории
+	const animateBall = (callback) => {
+		cells.forEach(c => { c.onclick = null; c.classList.remove('active'); });
 
-		const dx = toCol - fromCol;
-		const dy = toRow - fromRow;
+		const ball = document.createElement('div');
+		ball.className = 'pinball-ball';
+		ball.style.opacity = '0';
+		grid.appendChild(ball);
 
-		if (dx > 0 && dy === 0) return 'right';
-		if (dx < 0 && dy === 0) return 'left';
-		if (dy > 0 && dx === 0) return 'down';
-		if (dy < 0 && dx === 0) return 'up';
-		if (dx > 0 && dy > 0) return 'down-right';
-		if (dx > 0 && dy < 0) return 'up-right';
-		if (dx < 0 && dy > 0) return 'down-left';
-		if (dx < 0 && dy < 0) return 'up-left';
-		return null;
+		const fullPath = [launchPosition.index, ...ballPath.map(p => p.index)];
+		if (correctExitPosition !== -1) fullPath.push(correctExitPosition);
+
+		if (fullPath.length === 0) {
+			ball.remove();
+			callback();
+			return;
+		}
+
+		const getCellCenter = (index) => {
+			const cell = cells[index];
+			const cr = cell.getBoundingClientRect();
+			const gr = grid.getBoundingClientRect();
+			return { left: cr.left - gr.left + cr.width / 2, top: cr.top - gr.top + cr.height / 2 };
+		};
+
+		const stepDelay = Math.min(200, Math.max(80, 1500 / fullPath.length));
+
+		// Начальная позиция без перехода
+		const start = getCellCenter(fullPath[0]);
+		ball.style.left = start.left + 'px';
+		ball.style.top = start.top + 'px';
+
+		let step = 0;
+
+		const moveNext = () => {
+			if (step === 0) ball.style.opacity = '1';
+			step++;
+			if (step >= fullPath.length) {
+				setTimeout(() => {
+					ball.style.transition = 'opacity 0.2s';
+					ball.style.opacity = '0';
+					setTimeout(() => { ball.remove(); callback(); }, 220);
+				}, stepDelay);
+				return;
+			}
+			ball.style.transition = `left ${stepDelay * 0.85}ms linear, top ${stepDelay * 0.85}ms linear`;
+			const pos = getCellCenter(fullPath[step]);
+			ball.style.left = pos.left + 'px';
+			ball.style.top = pos.top + 'px';
+			setTimeout(moveNext, stepDelay);
+		};
+
+		setTimeout(moveNext, 80);
 	};
 
 	function getDirectionName(dx, dy) {
@@ -472,13 +482,10 @@ function gamePinball(sizeStr) {
 			c.removeAttribute('data-ball-dir-in');
 			c.removeAttribute('data-ball-dir-out');
 			c.style.animationDelay = '';
-
-			// Удаляем все точки
-			const pointsContainer = c.querySelector('.ball-points-container');
-			if (pointsContainer) {
-				pointsContainer.remove();
-			}
+			c.querySelectorAll('.ball-points-container, svg.ball-path-svg').forEach(el => el.remove());
 		});
+		const existingBall = grid.querySelector('.pinball-ball');
+		if (existingBall) existingBall.remove();
 		if (launchPosition) {
 			cells[launchPosition.index].classList.remove('launch-cell');
 			cells[launchPosition.index].innerHTML = '';
@@ -533,21 +540,19 @@ function gamePinball(sizeStr) {
 	const checkAnswer = (selectedIndex) => {
 		const isCorrect = parseInt(selectedIndex) === correctExitPosition;
 
-		// Подсвечиваем выбранную ячейку
 		if (!isCorrect) {
 			cells[selectedIndex].classList.add('wrong-exit');
-		}
-
-		if (isCorrect) {
-			finishGame(true);
-			this.playTone(523, 0.1);
-			if (navigator.vibrate) navigator.vibrate(50);
-		} else {
 			mistakes++;
 			this.playTone(220, 0.3);
 			if (navigator.vibrate) navigator.vibrate(200);
-			finishGame(false);
+		} else {
+			this.playTone(523, 0.1);
+			if (navigator.vibrate) navigator.vibrate(50);
 		}
+
+		animateBall(() => {
+			finishGame(isCorrect);
+		});
 	};
 
 	// Собираем интерфейс
