@@ -2,10 +2,24 @@
 	box-sizing: border-box;
 }
 
+:root {
+	--accent:       #EE4540;
+	--accent-muted: rgba(238, 69, 64, 0.12);
+	--accent-dim:   rgba(238, 69, 64, 0.4);
+	--bg:           #0c0c0c;
+	--bg-surface:   #131313;
+	--bg-elevated:  #181818;
+	--border:       #222;
+	--border-mid:   #333;
+	--text:         #d4d4d4;
+	--text-muted:   #5a5a5a;
+	--text-dim:     #888;
+}
+
 html,
 body {
-	background-color: black;
-	color: white;
+	background-color: var(--bg);
+	color: var(--text);
 	font-family: StalinOne-Regular;
 	font-size: 14px;
 	padding: 0;
@@ -13,54 +27,84 @@ body {
 	min-height: 100vh;
 }
 
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Links ── */
 a,
 a:visited {
-	color: white;
+	color: var(--text);
 	text-decoration: none;
 }
 
 a:hover {
 	text-decoration: underline;
-	color: #EE4540;
+	color: var(--accent);
 }
 
+/* ── Buttons ── */
 button {
 	padding: 0;
 	background: none;
 	border: none;
 	font-family: StalinOne-Regular;
 	font-size: 14px;
-	color: white;
+	color: var(--text);
 	cursor: pointer;
 }
+
+/* ─────────────────────────────────────
+   Chat layout
+───────────────────────────────────── */
 
 .chat {
 	display: flex;
 	flex-direction: column;
 	gap: 1em;
-	padding: 1em;
+	padding: 1.2em 1.4em;
 	padding-bottom: 0;
-	/* min-height: 100vh; */
 }
 
 .chat:last-child {
-	padding: 1em;
+	padding: 1.2em 1.4em;
 }
 
 .chat:empty {
 	padding-top: 0;
 }
 
+/* Fade-in for new entries.
+   fill-mode: backwards — начальный кадр применяется до старта, но после окончания
+   анимации transform НЕ остаётся на элементе, иначе position:fixed внутри ломается */
+.b,
+.a {
+	animation: entry-appear 0.18s ease-out backwards;
+}
+
+@keyframes entry-appear {
+	from { opacity: 0; transform: translateY(5px); }
+	to   { opacity: 1; }
+}
+
+/* ── Prompt row ── */
 .b {
 	position: relative;
 	display: flex;
 	align-items: center;
 	white-space: break-spaces;
+	color: var(--text-dim);
 }
 
 .b:before {
-	content: ">";
-	margin-right: 0.6em;
+	content: "›";
+	margin-right: 0.55em;
+	color: var(--accent);
+	font-size: 1.3em;
+	line-height: 1;
+	flex-shrink: 0;
 }
 
 .b .cursor {
@@ -83,69 +127,69 @@ body.focus .current .cursor:before {
 }
 
 @keyframes blink {
-	0% {
-		opacity: 1;
-	}
-
-	30% {
-		opacity: 1;
-	}
-
-	50% {
-		opacity: 0;
-	}
-
-	100% {
-		opacity: 1;
-	}
+	0%   { opacity: 1; }
+	30%  { opacity: 1; }
+	50%  { opacity: 0; }
+	100% { opacity: 1; }
 }
 
+/* ── Sticky input ── */
 .command-input-container {
-    position: sticky;
-    bottom: 0;
-    background: black;
-    padding: 1em;
-    z-index: 100;
-		min-height: 3em;
+	position: sticky;
+	bottom: 0;
+	background: var(--bg);
+	padding: 0.85em 1.4em;
+	z-index: 100;
+	min-height: 3em;
+	border-top: 1px solid var(--border);
 }
 
 input#command_input {
 	font-family: inherit;
 	font-size: inherit;
-	color: white;
+	color: var(--text);
 	background: none;
 	border: none;
-}
-
-input#command_input {
 	outline: none;
+	width: 100%;
+	caret-color: var(--accent);
 }
 
+/* ── Command buttons ── */
 .command {
-	border-bottom: 1px dashed #7b7b7b;
+	border-bottom: 1px solid var(--border-mid);
+	transition: color 0.15s, border-color 0.15s;
+	padding-bottom: 1px;
 }
 
 .command:hover {
-	color: #EE4540;
+	color: var(--accent);
+	border-bottom-color: var(--accent);
 }
+
+/* ─────────────────────────────────────
+   Components
+───────────────────────────────────── */
 
 .text-rows {
 	display: flex;
 	flex-direction: column;
+	gap: 0.25em;
 }
 
 @media screen and (max-width: 768px) {
-	.text-rows {
-		gap: 0.6em;
-	}
+	.text-rows { gap: 0.6em; }
 }
 
+/* About */
 .about {
 	display: flex;
 	flex-direction: column;
-	gap: 0.6em;
-	padding: 1em;
-	border: 1px solid #7b7b7b;
+	gap: 0.8em;
+	padding: 1.2em;
+	border: 1px solid var(--border);
+	border-left: 2px solid var(--accent);
+	background: var(--bg-surface);
 	width: 768px;
 	max-width: 100%;
 }
@@ -153,212 +197,249 @@ input#command_input {
 .about p {
 	padding: 0;
 	margin: 0;
+	line-height: 1.7;
 }
 
+/* Contacts */
 .contact-rows {
 	display: flex;
 	flex-direction: column;
-	gap: 1em;
+	gap: 0.7em;
 }
 
 .contact-cols {
 	display: flex;
-	gap: 1em;
+	gap: 0.7em;
 }
 
 @media screen and (max-width: 768px) {
-	.contact-cols {
-		flex-direction: column;
-	}
+	.contact-cols { flex-direction: column; }
 }
 
 .contact {
-	padding: 1em;
-	border: 1px solid #7b7b7b;
+	padding: 0.75em 1.1em;
+	border: 1px solid var(--border);
+	background: var(--bg-surface);
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	transition: border-color 0.2s, background 0.2s;
+	min-width: 160px;
 }
 
 .contact:hover {
-	border-color: #EE4540;
+	border-color: var(--accent);
+	background: var(--accent-muted);
 	text-decoration: none;
+	color: var(--text);
 }
 
+.contact i {
+	color: var(--accent);
+	width: 1.1em;
+	text-align: center;
+}
+
+/* Feedback form */
 form.feedback {
 	display: inline-flex;
 	flex-direction: column;
 	gap: 1em;
-	padding: 1em;
-	border: 1px solid #7b7b7b;
+	padding: 1.2em;
+	border: 1px solid var(--border);
+	background: var(--bg-surface);
 }
 
-form.feedback.success {
-	border-color: #274c2d;
-}
+form.feedback.success { border-color: #274c2d; }
 
 form.feedback input,
 form.feedback textarea {
 	font-family: StalinOne-Regular;
 	font-size: 14px;
-	color: black;
-	background: white;
-	border: none;
+	color: var(--text);
+	background: var(--bg-elevated);
+	border: 1px solid var(--border);
+	padding: 0.4em 0.6em;
 	width: 100%;
 }
 
+form.feedback input:focus,
+form.feedback textarea:focus {
+	outline: 1px solid var(--border-mid);
+}
+
 form.feedback button {
-	padding: 0.6em;
-	border: 1px solid #7b7b7b;
+	padding: 0.55em 1em;
+	border: 1px solid var(--border-mid);
+	transition: border-color 0.2s, background 0.2s;
 }
 
-form.feedback .error {
-	color: red;
+form.feedback button:hover {
+	border-color: var(--accent);
+	background: var(--accent-muted);
 }
 
-form.feedback .error.hide {
-	display: none;
-}
+form.feedback .error { color: #ff6b6b; }
+form.feedback .error.hide { display: none; }
 
+/* Block rows */
 .block-rows {
 	display: inline-flex;
 	flex-direction: column;
 	gap: 1em;
 	padding: 1em;
-	border: 1px solid #7b7b7b;
+	border: 1px solid var(--border);
+	background: var(--bg-surface);
 }
 
+/* Rich text */
 .text {
 	font-family: Comfortaa;
 	font-size: 16px;
 	line-height: 1.6;
 }
 
-.text h2 {
-	margin-bottom: 0;
-}
+.text h2 { margin-bottom: 0.4em; }
+.text a  { text-decoration: underline; }
+.text ul { margin: 0; }
 
-.text a {
-	text-decoration: underline;
-}
-
-.text ul {
-	margin: 0;
-}
+/* ─────────────────────────────────────
+   Breath timer
+───────────────────────────────────── */
 
 .breath-container {
-    border: 1px solid #EE4540;
-    padding: 1em;
-    position: relative;
-    margin: 1em 0;
+	border: 1px solid var(--border);
+	border-left: 2px solid var(--accent);
+	padding: 1.2em;
+	position: relative;
+	background: var(--bg-surface);
 }
 
 .phase-main {
-    font-size: 1.2em;
-    color: #EE4540;
-    margin: 0.5em 0;
+	font-size: 1.35em;
+	color: var(--accent);
+	margin: 0.4em 0;
+	letter-spacing: 0.04em;
 }
 
 .phase-next {
-    color: #7b7b7b;
-    font-size: 0.9em;
-    margin-bottom: 1em;
+	color: var(--text-muted);
+	font-size: 0.88em;
+	margin-bottom: 1em;
 }
 
 .cycle-count {
-    position: absolute;
-    top: 0.5em;
-    right: 0.5em;
-    color: #7b7b7b;
+	position: absolute;
+	top: 0.7em;
+	right: 0.8em;
+	color: var(--text-muted);
+	font-size: 0.82em;
 }
 
 .stop-button {
-    border: 1px solid #EE4540;
-    padding: 0.3em 0.8em !important;
-    transition: all 0.3s;
+	border: 1px solid var(--border-mid) !important;
+	padding: 0.4em 1em !important;
+	font-size: 0.85em;
+	letter-spacing: 0.05em;
+	transition: border-color 0.2s, background 0.2s;
 }
 
 .stop-button:hover {
-    background: #EE4540;
-    color: black !important;
+	border-color: var(--accent) !important;
+	background: var(--accent-muted) !important;
 }
 
-/* Базовые стили индикаторов */
+/* Inhale / exhale indicators */
 .inhale::after,
 .exhale::after {
-  content: '';
-  display: inline-block;
-  margin-left: 0.6em;
-  animation: bounce-up 1s infinite;
+	content: '';
+	display: inline-block;
+	margin-left: 0.6em;
+	animation: bounce-up 1s infinite;
 }
 
-/* Индикатор вдоха */
 .inhale::after {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 10px solid #EE4540;
-  transform: translateY(-25%);
+	width: 0; height: 0;
+	border-left: 6px solid transparent;
+	border-right: 6px solid transparent;
+	border-bottom: 10px solid var(--accent);
+	transform: translateY(-25%);
 }
 
-/* Индикатор выдоха */
 .exhale::after {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 10px solid #EE4540;
-  transform: translateY(25%);
-  animation: bounce-down 1s infinite;
+	width: 0; height: 0;
+	border-left: 6px solid transparent;
+	border-right: 6px solid transparent;
+	border-top: 10px solid var(--accent);
+	transform: translateY(25%);
+	animation: bounce-down 1s infinite;
 }
 
-/* Анимация пульсации */
 @keyframes breath-pulse {
-  0% { opacity: 0.6; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.15); }
-  100% { opacity: 0.6; transform: scale(0.95); }
+	0%   { opacity: 0.6; transform: scale(0.95); }
+	50%  { opacity: 1;   transform: scale(1.15); }
+	100% { opacity: 0.6; transform: scale(0.95); }
 }
 
 @keyframes bounce-up {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-30%); }
+	0%, 100% { transform: translateY(0); }
+	50%       { transform: translateY(-30%); }
 }
 
 @keyframes bounce-down {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(30%); }
+	0%, 100% { transform: translateY(0); }
+	50%       { transform: translateY(30%); }
 }
 
+/* ─────────────────────────────────────
+   Fullscreen game mode
+───────────────────────────────────── */
 
-/* Полноэкранный режим игры */
 .game-fullscreen {
-    position: fixed !important;
-		inset: 0 !important;
-    margin: 0 !important;
-    padding: 20px !important;
-		border: none !important;
-    z-index: 1000 !important;
-    background: black !important;
-    overflow: auto !important;
+	position: fixed !important;
+	inset: 0 !important;
+	margin: 0 !important;
+	padding: 20px !important;
+	border: none !important;
+	z-index: 1000 !important;
+	background: var(--bg) !important;
+	overflow: auto !important;
 }
 
+/* ─────────────────────────────────────
+   Games list
+───────────────────────────────────── */
 
-/* Список игр */
 .games-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    padding: 1em;
-}
-.game-item {
-    border: 1px solid #7b7b7b;
-    padding: 1em;
-    transition: all 0.3s;
-}
-.game-item:hover {
-    border-color: #EE4540;
-}
-.game-description {
-    margin-top: 0.5em;
-    color: #aaa;
-    font-size: 0.9em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5em;
 }
 
+.games-list h3 {
+	margin: 0 0 0.5em 0;
+	color: var(--text-muted);
+	font-size: 0.8em;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.game-item {
+	border: 1px solid var(--border);
+	padding: 0.75em 1em;
+	background: var(--bg-surface);
+	display: flex;
+	align-items: baseline;
+	gap: 1em;
+	transition: border-color 0.2s, background 0.2s;
+}
+
+.game-item:hover {
+	border-color: var(--accent);
+	background: var(--accent-muted);
+}
+
+.game-description {
+	color: var(--text-muted);
+	font-size: 0.88em;
+}
