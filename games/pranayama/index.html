@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Pranayama</title>
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400&display=swap"
+		/>
+		<link rel="stylesheet" href="css/styles.css" />
+	</head>
+	<body>
+		<!--
+			Embedding in another project:
+			- Copy the whole static-build folder.
+			- Open index.html or paste the markup below into your page
+			  and link css/styles.css and js/app.js with correct paths.
+			- If the app is not at the site root, set the asset base:
+			  data-asset-base="/path/to/static-build/"
+			  (with or without trailing slash — the script normalizes it).
+		-->
+		<div id="pranayama-root" class="pranayama" data-asset-base="">
+			<div id="screen-setup" class="pranayama-screen is-active">
+				<div class="setup">
+					<h1 class="title">Pranayama</h1>
+
+					<div class="phases-grid">
+						<div class="phase-card" data-step="in">
+							<div class="phase-name">Inhale</div>
+							<div class="phase-controls">
+								<button type="button" class="ctrl-btn phase-dec" aria-label="Decrease">−</button>
+								<span class="phase-value">6</span>
+								<button type="button" class="ctrl-btn phase-inc" aria-label="Increase">+</button>
+							</div>
+							<div class="phase-sub">6 sec</div>
+						</div>
+						<div class="phase-card" data-step="hold1">
+							<div class="phase-name">Hold after inhale</div>
+							<div class="phase-controls">
+								<button type="button" class="ctrl-btn phase-dec" aria-label="Decrease">−</button>
+								<span class="phase-value">0</span>
+								<button type="button" class="ctrl-btn phase-inc" aria-label="Increase">+</button>
+							</div>
+							<div class="phase-sub">off</div>
+						</div>
+						<div class="phase-card" data-step="out">
+							<div class="phase-name">Exhale</div>
+							<div class="phase-controls">
+								<button type="button" class="ctrl-btn phase-dec" aria-label="Decrease">−</button>
+								<span class="phase-value">6</span>
+								<button type="button" class="ctrl-btn phase-inc" aria-label="Increase">+</button>
+							</div>
+							<div class="phase-sub">6 sec</div>
+						</div>
+						<div class="phase-card" data-step="hold2">
+							<div class="phase-name">Hold after exhale</div>
+							<div class="phase-controls">
+								<button type="button" class="ctrl-btn phase-dec" aria-label="Decrease">−</button>
+								<span class="phase-value">0</span>
+								<button type="button" class="ctrl-btn phase-inc" aria-label="Increase">+</button>
+							</div>
+							<div class="phase-sub">off</div>
+						</div>
+					</div>
+
+					<div id="stats-row" class="stats" hidden>
+						<span id="stats-cycle">1 cycle: 0 sec</span>
+						<span id="stats-sep" class="stats-sep" hidden>·</span>
+						<span id="stats-total" hidden></span>
+					</div>
+
+					<div class="settings-panel">
+						<div class="setting-row">
+							<span class="setting-label">Color</span>
+							<div class="hue-row">
+								<input
+									id="hue-slider"
+									type="range"
+									min="0"
+									max="360"
+									value="162"
+									class="hue-slider"
+									aria-label="Theme hue"
+								/>
+								<div id="hue-dot" class="hue-dot"></div>
+							</div>
+						</div>
+
+						<div class="setting-row">
+							<span class="setting-label">Cycles</span>
+							<div class="counter-row">
+								<button type="button" class="ctrl-btn small cycles-dec" aria-label="Fewer cycles">
+									−
+								</button>
+								<span id="cycles-display" class="setting-value">∞</span>
+								<button type="button" class="ctrl-btn small cycles-inc" aria-label="More cycles">
+									+
+								</button>
+							</div>
+						</div>
+
+						<div class="setting-row">
+							<span class="setting-label">Sound</span>
+							<button type="button" id="sound-toggle" class="toggle-btn on">On</button>
+						</div>
+					</div>
+
+					<button type="button" id="btn-start" class="start-btn">Start</button>
+				</div>
+			</div>
+
+			<div id="screen-playing" class="pranayama-screen">
+				<div class="playing">
+					<div class="breath-wrap">
+						<div id="breath-circle" class="breath-circle">
+							<div id="breath-label" class="breath-label"></div>
+							<div id="breath-counter" class="breath-counter">0</div>
+						</div>
+					</div>
+
+					<div id="active-steps" class="active-steps"></div>
+
+					<div id="cycles-row" class="cycles-row" hidden>
+						<div id="cycle-pips" class="cycle-pips"></div>
+						<span id="cycles-label" class="cycles-label"></span>
+					</div>
+
+					<button type="button" id="btn-stop" class="stop-btn">Stop</button>
+				</div>
+			</div>
+		</div>
+
+		<script src="js/app.js" defer></script>
+	</body>
+</html>

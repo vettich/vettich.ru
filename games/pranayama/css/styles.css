@@ -1,0 +1,462 @@
+/* Styles scoped under #pranayama-root for embedding in other pages */
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+}
+
+#pranayama-root {
+	width: 100%;
+	min-height: 100vh;
+	box-sizing: border-box;
+	background: var(--bg);
+	color: var(--text);
+	font-family: 'Roboto Condensed', sans-serif;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		background 0.6s ease,
+		color 0.6s ease;
+}
+
+#pranayama-root {
+	position: relative;
+}
+
+#pranayama-root .pranayama-screen {
+	width: 100%;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: opacity 0.35s ease;
+}
+
+#pranayama-root .pranayama-screen:not(.is-active) {
+	position: absolute;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+#pranayama-root .setup {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 28px;
+	width: 100%;
+	max-width: 540px;
+	padding: 40px 20px;
+	box-sizing: border-box;
+}
+
+#pranayama-root .title {
+	margin: 0;
+	font-size: 32px;
+	font-weight: 300;
+	letter-spacing: 6px;
+	text-transform: uppercase;
+	color: var(--text);
+}
+
+#pranayama-root .phases-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	width: 100%;
+}
+
+#pranayama-root .phase-card {
+	background: var(--surface);
+	border-radius: 18px;
+	padding: 20px 16px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	transition: opacity 0.3s ease;
+}
+
+#pranayama-root .phase-card.zero {
+	opacity: 0.45;
+}
+
+#pranayama-root .phase-name {
+	font-size: 12px;
+	color: var(--text-muted);
+	text-align: center;
+	line-height: 1.3;
+}
+
+#pranayama-root .phase-controls {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+#pranayama-root .phase-value {
+	font-size: 34px;
+	min-width: 44px;
+	text-align: center;
+	line-height: 1;
+}
+
+#pranayama-root .phase-sub {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+#pranayama-root .ctrl-btn {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	border: none;
+	background: var(--accent);
+	color: #fff;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		background 0.15s,
+		transform 0.1s;
+}
+
+#pranayama-root .ctrl-btn:hover:not(:disabled) {
+	background: var(--accent-light);
+	transform: scale(1.08);
+}
+
+#pranayama-root .ctrl-btn:active:not(:disabled) {
+	transform: scale(0.94);
+}
+
+#pranayama-root .ctrl-btn:disabled {
+	opacity: 0.28;
+	cursor: default;
+}
+
+#pranayama-root .ctrl-btn.small {
+	width: 30px;
+	height: 30px;
+	font-size: 18px;
+}
+
+#pranayama-root .stats {
+	font-size: 14px;
+	color: var(--text-muted);
+	display: flex;
+	gap: 8px;
+}
+
+#pranayama-root .stats-sep {
+	opacity: 0.5;
+}
+
+#pranayama-root .settings-panel {
+	width: 100%;
+	background: var(--surface);
+	border-radius: 18px;
+	padding: 18px 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+#pranayama-root .setting-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+#pranayama-root .setting-label {
+	font-size: 15px;
+}
+
+#pranayama-root .hue-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+#pranayama-root .hue-slider {
+	width: 150px;
+	height: 8px;
+	border-radius: 4px;
+	-webkit-appearance: none;
+	appearance: none;
+	background: linear-gradient(
+		to right,
+		hsl(0, 65%, 58%),
+		hsl(40, 65%, 58%),
+		hsl(80, 65%, 58%),
+		hsl(120, 65%, 58%),
+		hsl(160, 65%, 58%),
+		hsl(200, 65%, 58%),
+		hsl(240, 65%, 58%),
+		hsl(280, 65%, 58%),
+		hsl(320, 65%, 58%),
+		hsl(360, 65%, 58%)
+	);
+	cursor: pointer;
+}
+
+#pranayama-root .hue-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+	cursor: pointer;
+}
+
+#pranayama-root .hue-slider::-moz-range-thumb {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: #fff;
+	border: none;
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+	cursor: pointer;
+}
+
+#pranayama-root .hue-dot {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	border: 2px solid rgba(255, 255, 255, 0.6);
+	flex-shrink: 0;
+	transition: background 0.2s;
+}
+
+#pranayama-root .counter-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+#pranayama-root .setting-value {
+	font-size: 24px;
+	min-width: 34px;
+	text-align: center;
+}
+
+#pranayama-root .toggle-btn {
+	padding: 6px 22px;
+	border-radius: 20px;
+	border: none;
+	font-size: 14px;
+	font-family: 'Roboto Condensed', sans-serif;
+	cursor: pointer;
+	transition:
+		background 0.2s,
+		color 0.2s;
+}
+
+#pranayama-root .toggle-btn.on {
+	background: var(--accent);
+	color: #fff;
+}
+
+#pranayama-root .toggle-btn:not(.on) {
+	background: var(--bg-dark);
+	color: var(--text-muted);
+}
+
+#pranayama-root .start-btn {
+	padding: 16px 64px;
+	border-radius: 40px;
+	border: none;
+	background: var(--accent);
+	color: #fff;
+	font-size: 22px;
+	font-family: 'Roboto Condensed', sans-serif;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	cursor: pointer;
+	box-shadow: 0 4px 22px rgba(0, 0, 0, 0.14);
+	transition:
+		transform 0.15s,
+		box-shadow 0.15s,
+		background 0.3s;
+}
+
+#pranayama-root .start-btn:hover:not(:disabled) {
+	transform: translateY(-2px);
+	box-shadow: 0 7px 28px rgba(0, 0, 0, 0.2);
+	background: var(--accent-light);
+}
+
+#pranayama-root .start-btn:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+#pranayama-root .start-btn:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+#pranayama-root .playing {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 52px;
+	padding: 40px 20px;
+}
+
+#pranayama-root .breath-wrap {
+	width: 300px;
+	height: 300px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#pranayama-root .breath-circle {
+	width: 300px;
+	height: 300px;
+	border-radius: 50%;
+	background: var(--accent);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	color: #fff;
+	transition: transform 1s ease-in-out;
+	box-shadow: 0 0 70px rgba(0, 0, 0, 0.12);
+}
+
+#pranayama-root .breath-circle.holding {
+	animation: pranayama-hold-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pranayama-hold-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 70px rgba(0, 0, 0, 0.12);
+	}
+	50% {
+		box-shadow: 0 0 90px rgba(0, 0, 0, 0.22);
+	}
+}
+
+#pranayama-root .breath-label {
+	font-size: 18px;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	opacity: 0.85;
+}
+
+#pranayama-root .breath-counter {
+	font-size: 72px;
+	line-height: 1;
+}
+
+#pranayama-root .active-steps {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 28px;
+}
+
+#pranayama-root .step-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	opacity: 0.35;
+	transition: opacity 0.4s ease;
+}
+
+#pranayama-root .step-item.current {
+	opacity: 1;
+}
+
+#pranayama-root .step-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--accent);
+	transition: background 0.3s;
+}
+
+#pranayama-root .step-item.current .step-dot {
+	background: var(--text);
+}
+
+#pranayama-root .step-name {
+	font-size: 11px;
+	color: var(--text-muted);
+	text-align: center;
+	max-width: 80px;
+	line-height: 1.3;
+}
+
+#pranayama-root .step-val {
+	font-size: 20px;
+}
+
+#pranayama-root .cycles-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+#pranayama-root .cycle-pips {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+#pranayama-root .cycle-pip {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--white-alpha);
+	transition: background 0.4s ease;
+}
+
+#pranayama-root .cycle-pip.done {
+	background: var(--accent);
+}
+
+#pranayama-root .cycles-label {
+	margin-left: 6px;
+	font-size: 14px;
+	color: var(--text-muted);
+}
+
+#pranayama-root .stop-btn {
+	padding: 12px 52px;
+	border-radius: 40px;
+	border: 2px solid var(--accent);
+	background: transparent;
+	color: var(--text);
+	font-size: 18px;
+	font-family: 'Roboto Condensed', sans-serif;
+	letter-spacing: 2px;
+	cursor: pointer;
+	transition:
+		background 0.2s,
+		color 0.2s,
+		transform 0.1s;
+}
+
+#pranayama-root .stop-btn:hover {
+	background: var(--accent);
+	color: #fff;
+}
+
+#pranayama-root .stop-btn:active {
+	transform: scale(0.97);
+}

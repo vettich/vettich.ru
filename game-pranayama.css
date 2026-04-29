@@ -1,0 +1,66 @@
+/* Shell for the `game pranayama` command */
+.pranayama-game-host {
+	border: 1px solid #7b7b7b;
+	padding: 1em;
+	max-width: 100%;
+}
+
+.pranayama-game-intro {
+	margin: 0 0 1em;
+	color: #aaa;
+	line-height: 1.45;
+}
+
+.pranayama-game-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75em;
+	margin-top: 1em;
+}
+
+.pranayama-game-btn {
+	padding: 0.35em 0.9em !important;
+	border: 1px solid #7b7b7b !important;
+	font-family: inherit !important;
+}
+
+.pranayama-game-btn:hover {
+	border-color: #ee4540 !important;
+	color: #ee4540 !important;
+}
+
+.pranayama-iframe-wrap {
+	display: none;
+	margin-top: 1em;
+}
+
+.pranayama-game-host.game-fullscreen {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	padding: 12px !important;
+	background: #111 !important;
+}
+
+.pranayama-game-host.game-fullscreen .pranayama-game-intro {
+	display: none;
+}
+
+.pranayama-game-host.game-fullscreen .pranayama-iframe-wrap {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	margin-top: 0;
+}
+
+.pranayama-game-host.game-fullscreen .pranayama-iframe {
+	flex: 1;
+	width: 100%;
+	min-height: 280px;
+	border: 0;
+}
+
+.pranayama-game-host.game-fullscreen .pranayama-game-actions {
+	margin-top: 12px;
+	flex-shrink: 0;
+}

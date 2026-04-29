@@ -535,6 +535,13 @@ const games = {
 			gamePinball.call(this, sizeStr);
 		}
 	},
+	pranayama: {
+		name: "Pranayama",
+		description: "Breath cycle timer (inhale, exhale, holds)",
+		run() {
+			gamePranayama.call(this);
+		}
+	},
 }
 
 const commandsSortedList = Object.keys(commands).sort()
