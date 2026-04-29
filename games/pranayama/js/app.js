@@ -199,13 +199,13 @@
 		if (cyclesDisplay) cyclesDisplay.textContent = cyclesLimit === 0 ? '∞' : String(cyclesLimit);
 		const soundToggle = $('#sound-toggle');
 		if (soundToggle) {
-			soundToggle.textContent = soundEnabled ? 'On' : 'Off';
 			soundToggle.classList.toggle('on', soundEnabled);
+			soundToggle.setAttribute('aria-pressed', String(soundEnabled));
 		}
 		const darkToggle = $('#dark-toggle');
 		if (darkToggle) {
-			darkToggle.textContent = darkMode ? 'On' : 'Off';
 			darkToggle.classList.toggle('on', darkMode);
+			darkToggle.setAttribute('aria-pressed', String(darkMode));
 		}
 		applyHueCss();
 	}
