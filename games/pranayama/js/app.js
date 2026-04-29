@@ -26,6 +26,7 @@
 	};
 
 	const LS_KEY = 'pranayama-settings';
+	const DARK_CLASS = 'pranayama-dark';
 
 	const root = document.getElementById('pranayama-root');
 	if (!root) return;
@@ -35,6 +36,7 @@
 	let hue = 162;
 	let soundEnabled = true;
 	let cyclesLimit = 0;
+	let darkMode = false;
 
 	let playing = false;
 	/** @type {Step|null} */
@@ -63,16 +65,28 @@
 
 	function applyHueCss() {
 		const h = hue;
-		root.style.setProperty('--bg', `hsl(${h}, 48%, 74%)`);
-		root.style.setProperty('--bg-dark', `hsl(${h}, 43%, 61%)`);
-		root.style.setProperty('--surface', `hsl(${h}, 38%, 67%)`);
-		root.style.setProperty('--accent', `hsl(${h}, 42%, 40%)`);
-		root.style.setProperty('--accent-light', `hsl(${h}, 42%, 52%)`);
-		root.style.setProperty('--text', `hsl(${h}, 55%, 16%)`);
-		root.style.setProperty('--text-muted', `hsl(${h}, 32%, 30%)`);
-		root.style.setProperty('--white-alpha', 'rgba(255,255,255,0.25)');
+		root.classList.toggle(DARK_CLASS, darkMode);
+		if (darkMode) {
+			root.style.setProperty('--bg', `hsl(${h}, 20%, 11%)`);
+			root.style.setProperty('--bg-dark', `hsl(${h}, 18%, 16%)`);
+			root.style.setProperty('--surface', `hsl(${h}, 18%, 19%)`);
+			root.style.setProperty('--accent', `hsl(${h}, 42%, 58%)`);
+			root.style.setProperty('--accent-light', `hsl(${h}, 42%, 68%)`);
+			root.style.setProperty('--text', `hsl(${h}, 25%, 90%)`);
+			root.style.setProperty('--text-muted', `hsl(${h}, 18%, 62%)`);
+			root.style.setProperty('--white-alpha', 'rgba(255,255,255,0.12)');
+		} else {
+			root.style.setProperty('--bg', `hsl(${h}, 48%, 74%)`);
+			root.style.setProperty('--bg-dark', `hsl(${h}, 43%, 61%)`);
+			root.style.setProperty('--surface', `hsl(${h}, 38%, 67%)`);
+			root.style.setProperty('--accent', `hsl(${h}, 42%, 40%)`);
+			root.style.setProperty('--accent-light', `hsl(${h}, 42%, 52%)`);
+			root.style.setProperty('--text', `hsl(${h}, 55%, 16%)`);
+			root.style.setProperty('--text-muted', `hsl(${h}, 32%, 30%)`);
+			root.style.setProperty('--white-alpha', 'rgba(255,255,255,0.25)');
+		}
 		const dot = $('#hue-dot');
-		if (dot) dot.style.background = `hsl(${h}, 60%, 55%)`;
+		if (dot) dot.style.background = `hsl(${h}, 60%, ${darkMode ? 62 : 55}%)`;
 	}
 
 	function saveSettings() {
@@ -80,7 +94,7 @@
 		try {
 			localStorage.setItem(
 				LS_KEY,
-				JSON.stringify({ values, hue, soundEnabled, cyclesLimit })
+				JSON.stringify({ values, hue, soundEnabled, cyclesLimit, darkMode })
 			);
 		} catch {
 			// ignore
@@ -96,8 +110,9 @@
 				values = { ...values, ...s.values };
 			}
 			if (typeof s.hue === 'number') hue = s.hue;
-			if (typeof s.soundEnabled === 'boolean') soundEnabled = s.soundEnabled;
-			if (typeof s.cyclesLimit === 'number') cyclesLimit = s.cyclesLimit;
+		if (typeof s.soundEnabled === 'boolean') soundEnabled = s.soundEnabled;
+		if (typeof s.cyclesLimit === 'number') cyclesLimit = s.cyclesLimit;
+		if (typeof s.darkMode === 'boolean') darkMode = s.darkMode;
 		} catch {
 			// ignore
 		}
@@ -186,6 +201,11 @@
 		if (soundToggle) {
 			soundToggle.textContent = soundEnabled ? 'On' : 'Off';
 			soundToggle.classList.toggle('on', soundEnabled);
+		}
+		const darkToggle = $('#dark-toggle');
+		if (darkToggle) {
+			darkToggle.textContent = darkMode ? 'On' : 'Off';
+			darkToggle.classList.toggle('on', darkMode);
 		}
 		applyHueCss();
 	}
@@ -279,6 +299,13 @@
 		$('#screen-setup')?.classList.remove('is-active');
 	}
 
+	/** После смены экрана сбрасываем прокрутку (длинный setup + короткий playing). */
+	function resetScrollAfterScreenChange() {
+		requestAnimationFrame(() => {
+			root.scrollIntoView({ block: 'start', behavior: 'auto' });
+		});
+	}
+
 	function start() {
 		const active = getActiveSteps();
 		if (active.length === 0) return;
@@ -291,6 +318,7 @@
 		renderCyclePips();
 		updatePlayingUi();
 		showPlaying();
+		resetScrollAfterScreenChange();
 		if (intervalId != null) clearInterval(intervalId);
 		intervalId = setInterval(tick, 1000);
 	}
@@ -305,6 +333,7 @@
 			intervalId = null;
 		}
 		showSetup();
+		resetScrollAfterScreenChange();
 		renderSetup();
 	}
 
@@ -366,6 +395,11 @@
 
 	$('#sound-toggle')?.addEventListener('click', () => {
 		soundEnabled = !soundEnabled;
+		renderSetup();
+	});
+
+	$('#dark-toggle')?.addEventListener('click', () => {
+		darkMode = !darkMode;
 		renderSetup();
 	});
 

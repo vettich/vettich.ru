@@ -1,15 +1,22 @@
 /* Styles scoped under #pranayama-root for embedding in other pages */
 
-html,
+html {
+	width: 100%;
+	margin: 0;
+	min-height: 100%;
+}
+
 body {
 	width: 100%;
-	height: 100%;
 	margin: 0;
+	min-height: 100vh;
+	min-height: 100dvh;
 }
 
 #pranayama-root {
 	width: 100%;
 	min-height: 100vh;
+	min-height: 100dvh;
 	box-sizing: border-box;
 	background: var(--bg);
 	color: var(--text);
@@ -29,6 +36,7 @@ body {
 #pranayama-root .pranayama-screen {
 	width: 100%;
 	min-height: 100vh;
+	min-height: 100dvh;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -39,6 +47,12 @@ body {
 	position: absolute;
 	top: 0;
 	left: 0;
+	right: 0;
+	width: 100%;
+	/* Длинный setup остаётся в DOM: без обрезки абсолютный блок тянет scrollHeight страницы */
+	max-height: 0;
+	overflow: hidden;
+	visibility: hidden;
 	opacity: 0;
 	pointer-events: none;
 }
@@ -78,7 +92,9 @@ body {
 	flex-direction: column;
 	align-items: center;
 	gap: 10px;
-	transition: opacity 0.3s ease;
+	transition:
+		opacity 0.3s ease,
+		background 0.6s ease;
 }
 
 #pranayama-root .phase-card.zero {
@@ -153,6 +169,8 @@ body {
 	color: var(--text-muted);
 	display: flex;
 	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: center;
 }
 
 #pranayama-root .stats-sep {
@@ -167,12 +185,15 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 18px;
+	transition: background 0.6s ease;
 }
 
 #pranayama-root .setting-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 12px;
+	min-width: 0;
 }
 
 #pranayama-root .setting-label {
@@ -183,10 +204,15 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 12px;
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
 #pranayama-root .hue-slider {
+	flex: 1 1 auto;
+	min-width: 0;
 	width: 150px;
+	max-width: 100%;
 	height: 8px;
 	border-radius: 4px;
 	-webkit-appearance: none;
@@ -459,4 +485,135 @@ body {
 
 #pranayama-root .stop-btn:active {
 	transform: scale(0.97);
+}
+
+/* --- Mobile / narrow viewports --- */
+
+@media (max-width: 640px) {
+	#pranayama-root {
+		align-items: flex-start;
+		justify-content: flex-start;
+	}
+
+	#pranayama-root .pranayama-screen {
+		align-items: flex-start;
+		justify-content: flex-start;
+	}
+
+	#pranayama-root .setup {
+		gap: 22px;
+		padding-top: max(20px, env(safe-area-inset-top, 0px));
+		padding-right: max(16px, env(safe-area-inset-right, 0px));
+		padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+		padding-left: max(16px, env(safe-area-inset-left, 0px));
+	}
+
+	#pranayama-root .title {
+		font-size: 26px;
+		letter-spacing: 4px;
+	}
+
+	#pranayama-root .phases-grid {
+		gap: 10px;
+	}
+
+	#pranayama-root .phase-card {
+		padding: 16px 12px;
+		border-radius: 14px;
+	}
+
+	#pranayama-root .phase-name {
+		font-size: 11px;
+	}
+
+	#pranayama-root .phase-value {
+		font-size: 28px;
+		min-width: 40px;
+	}
+
+	#pranayama-root .settings-panel {
+		padding: 16px 16px;
+		border-radius: 14px;
+	}
+
+	#pranayama-root .setting-row:has(.hue-row) {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	#pranayama-root .setting-label {
+		flex-shrink: 0;
+	}
+
+	#pranayama-root .playing {
+		gap: 36px;
+		padding-top: max(16px, env(safe-area-inset-top, 0px));
+		padding-right: max(16px, env(safe-area-inset-right, 0px));
+		padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+		padding-left: max(16px, env(safe-area-inset-left, 0px));
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	#pranayama-root .breath-wrap,
+	#pranayama-root .breath-circle {
+		width: min(300px, calc(100vw - 32px));
+		height: min(300px, calc(100vw - 32px));
+	}
+
+	#pranayama-root .breath-counter {
+		font-size: clamp(48px, 14vw, 72px);
+	}
+
+	#pranayama-root .breath-label {
+		font-size: 15px;
+		letter-spacing: 2px;
+	}
+
+	#pranayama-root .active-steps {
+		gap: 18px;
+	}
+
+	#pranayama-root .step-name {
+		max-width: 88px;
+	}
+
+	#pranayama-root .start-btn {
+		width: 100%;
+		max-width: 340px;
+		padding: 14px 40px;
+		font-size: 18px;
+		letter-spacing: 2px;
+	}
+
+	#pranayama-root .stop-btn {
+		width: 100%;
+		max-width: 300px;
+		box-sizing: border-box;
+	}
+}
+
+@media (max-width: 420px) {
+	#pranayama-root .phases-grid {
+		grid-template-columns: 1fr;
+	}
+
+	#pranayama-root .phase-name {
+		font-size: 12px;
+	}
+}
+
+@media (pointer: coarse) and (max-width: 640px) {
+	#pranayama-root .ctrl-btn {
+		width: 44px;
+		height: 44px;
+		font-size: 24px;
+	}
+
+	#pranayama-root .ctrl-btn.small {
+		width: 40px;
+		height: 40px;
+		font-size: 20px;
+	}
 }
