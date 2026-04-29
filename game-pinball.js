@@ -1,9 +1,10 @@
 function gamePinball(sizeStr) {
 	// `this` is `CurrentCommand`
 
-	const size = parseInt(sizeStr) || 5;
-	if (isNaN(size) || size < 2 || size > 8) {
-		return this.applyAnswer('Invalid size. Use number between 2-8. Example: <button class="command">game pinball 4</button>');
+	const baseSize = parseInt(sizeStr) || 5;
+	let size = baseSize;
+	if (isNaN(size) || size < 3 || size > 10) {
+		return this.applyAnswer('Invalid size. Use number between 3-10. Example: <button class="command">game pinball 4</button>');
 	}
 
 	this.preloadAudios({
@@ -19,14 +20,22 @@ function gamePinball(sizeStr) {
 	let launchPosition = null;
 	let correctExitPosition = null;
 	let currentLevel = 1;
+	const maxLevelForSize = Math.min(10, size * 2); // Максимальный уровень для текущего размера поля
+	let ballPath = []; // Для хранения траектории шарика
 
 	// Создаем контейнер игры
 	const container = document.createElement('div');
 	container.id = gameId;
 	container.className = 'pinball-container';
 
+	// Создаем header для информации об уровне
+	const header = document.createElement('div');
+	header.className = 'pinball-header';
+	header.innerHTML = `<div class="pinball-level">Level: ${currentLevel}/${maxLevelForSize}</div>`;
+
 	// Создаем footer
 	const footer = document.createElement('div');
+	footer.className = 'pinball-footer';
 
 	// Создаем игровое поле с дополнительными ячейками по краям
 	const grid = document.createElement('div');
@@ -86,7 +95,9 @@ function gamePinball(sizeStr) {
 	// Генерация случайных пинов
 	const generatePins = () => {
 		pins = [];
-		const totalPins = Math.floor(size * 1.5) + currentLevel - 1;
+		// Ограничиваем количество пинов в зависимости от уровня и размера поля
+		const maxPins = Math.min(size * size - 1, Math.floor(size * 1.5) + currentLevel - 1);
+		const totalPins = Math.max(1, maxPins);
 
 		while (pins.length < totalPins) {
 			// Выбираем только основные ячейки
@@ -151,6 +162,7 @@ function gamePinball(sizeStr) {
 	const simulateBallMovement = () => {
 		let x, y, dx, dy;
 		const gridSize = size + 2;
+		ballPath = []; // Сбрасываем траекторию
 
 		// Определяем начальную позицию и направление
 		const row = Math.floor(launchPosition.index / gridSize);
@@ -187,6 +199,17 @@ function gamePinball(sizeStr) {
 		const maxSteps = size * size * 2; // Предотвращаем бесконечный цикл
 
 		while (steps < maxSteps) {
+			const cellIndex = y * gridSize + x;
+			const cell = cells[cellIndex];
+
+			if (cell && cell.classList.contains('main-cell')) {
+				// Записываем направление входа
+				cell.dataset.ballDirIn = getDirectionName(dx, dy);
+				// Обновляем направление выхода
+				cell.dataset.ballDirOut = getDirectionName(dx, dy);
+				ballPath.push(cellIndex);
+			}
+
 			// Проверяем, не вышли ли за границы основного поля
 			if (x <= 0 || x >= gridSize - 1 || y <= 0 || y >= gridSize - 1) {
 				// Находим индекс граничной ячейки
@@ -201,7 +224,6 @@ function gamePinball(sizeStr) {
 			}
 
 			// Проверяем, есть ли пин в этой клетке
-			const cellIndex = y * gridSize + x;
 			const pin = pins.find(p => p.index === cellIndex);
 			if (pin) {
 				// Меняем направление в зависимости от типа пина
@@ -217,9 +239,94 @@ function gamePinball(sizeStr) {
 			steps++;
 		}
 
+		// Добавляем направления к данным траектории
+		// ballPath.forEach((index, i) => {
+		// 	if (cells[index]) {
+		// 		cells[index].dataset.ballDirIn = pathDirections[i];
+		// 		cells[index].dataset.ballDirOut = pathDirections[i + 1] || pathDirections[i];
+		// 	}
+		// });
+
 		// Если шарик не вышел за пределы (не должно происходить)
 		correctExitPosition = -1;
 	};
+
+	const showBallPath = () => {
+		// Очищаем предыдущую траекторию
+		cells.forEach(cell => {
+			cell.classList.remove('ball-path', 'ball-path-change');
+			cell.innerHTML = '';
+		});
+
+		// Проходим по траектории и рисуем точки
+		for (let i = 0; i < ballPath.length; i++) {
+			const cellIndex = ballPath[i];
+			const cell = cells[cellIndex];
+			if (!cell || !cell.classList.contains('main-cell')) continue;
+
+			// Создаем контейнер для точек
+			const pointsContainer = document.createElement('div');
+			pointsContainer.className = 'ball-points-container';
+
+			// Первая точка (вход)
+			const point1 = document.createElement('div');
+			point1.className = 'ball-point ball-point-in';
+			point1.dataset.direction = getDirection(cellIndex, ballPath[i + 1], size + 2);
+
+			// Вторая точка (выход)
+			const point2 = document.createElement('div');
+			point2.className = 'ball-point ball-point-out';
+			point2.dataset.direction = getDirection(cellIndex, ballPath[i + 1], size + 2);
+
+			// Определяем направления
+			const prevDir = i > 0 ? getDirection(ballPath[i - 1], cellIndex, size + 2) : null;
+			const nextDir = i < ballPath.length - 1 ? getDirection(cellIndex, ballPath[i + 1], size + 2) : null;
+
+			// Если направление изменилось (был отскок)
+			if (prevDir && nextDir && prevDir !== nextDir) {
+				cell.classList.add('ball-path-change');
+				point2.classList.add('ball-point-bounce');
+			}
+
+			pointsContainer.append(point1, point2);
+			cell.appendChild(pointsContainer);
+			cell.style.animationDelay = `${i * 0.05}s`;
+			cell.classList.add('ball-path');
+		}
+	};
+
+	// Улучшенная функция определения направления
+	const getDirection = (fromIndex, toIndex, gridSize) => {
+		const fromRow = Math.floor(fromIndex / gridSize);
+		const fromCol = fromIndex % gridSize;
+		const toRow = Math.floor(toIndex / gridSize);
+		const toCol = toIndex % gridSize;
+
+		const dx = toCol - fromCol;
+		const dy = toRow - fromRow;
+
+		if (dx > 0 && dy === 0) return 'right';
+		if (dx < 0 && dy === 0) return 'left';
+		if (dy > 0 && dx === 0) return 'down';
+		if (dy < 0 && dx === 0) return 'up';
+		if (dx > 0 && dy > 0) return 'down-right';
+		if (dx > 0 && dy < 0) return 'up-right';
+		if (dx < 0 && dy > 0) return 'down-left';
+		if (dx < 0 && dy < 0) return 'up-left';
+		return null;
+	};
+
+	function getDirectionName(dx, dy) {
+		if (dx > 0 && dy === 0) return 'right';
+		if (dx < 0 && dy === 0) return 'left';
+		if (dy > 0 && dx === 0) return 'down';
+		if (dy < 0 && dx === 0) return 'up';
+		if (dx > 0 && dy > 0) return 'down-right';
+		if (dx > 0 && dy < 0) return 'up-right';
+		if (dx < 0 && dy > 0) return 'down-left';
+		if (dx < 0 && dy < 0) return 'up-left';
+		return '';
+	}
 
 	// Отображение позиции запуска
 	const showLaunchPosition = () => {
@@ -259,6 +366,9 @@ function gamePinball(sizeStr) {
 		// Показываем все пины
 		showAllPins();
 
+		// Показываем траекторию шарика
+		showBallPath();
+
 		// Подсвечиваем правильный ответ
 		if (correctExitPosition !== -1) {
 			cells[correctExitPosition].classList.add(success ? 'correct-exit' : 'correct-show');
@@ -270,28 +380,77 @@ function gamePinball(sizeStr) {
 
 		const result = document.createElement('div');
 		result.className = 'pinball-result';
+
+		// Создаем кнопки в зависимости от успеха
+		const buttons = [];
+
+		if (success) {
+			if (currentLevel > 1) {
+				buttons.push(`<button class="pinball-prev-level">Previous Level</button>`);
+			}
+			buttons.push(`<button class="pinball-next-level">Next Level</button>`);
+			buttons.push(`<button class="pinball-same-level">Repeat Level</button>`);
+		} else {
+			if (currentLevel > 1) {
+				buttons.push(`<button class="pinball-prev-level">Previous Level</button>`);
+			}
+			buttons.push(`<button class="pinball-same-level">Try Again</button>`);
+		}
+
+		buttons.push(`<button class="pinball-stop">Quit</button>`);
+
 		result.innerHTML = `${message}
                 <div class="pinball-result-buttons">
-                    <button class="pinball-restart">${success ? 'Next Level' : 'Try Again'}</button>
-                    <button class="pinball-stop">Quit</button>
+                    ${buttons.join('')}
                 </div>`;
 
-		result.querySelector('.pinball-restart').onclick = () => {
-			if (success) currentLevel++;
-			cells.forEach(c => {
-				c.classList.remove('correct-exit', 'correct-show', 'pin-visible', 'active');
-				c.dataset.pinType = null;
-			});
-			startBtn.onclick();
-		};
+		// Обработчики для кнопок
+		result.querySelector('.pinball-next-level')?.addEventListener('click', () => {
+			if (currentLevel < maxLevelForSize) {
+				currentLevel++;
+			} else {
+				// Увеличиваем размер поля и сбрасываем уровень
+				size++;
+				currentLevel = 1;
+			}
+			restartGame();
+		});
 
-		result.querySelector('.pinball-stop').onclick = () => {
+		result.querySelector('.pinball-same-level')?.addEventListener('click', () => {
+			restartGame();
+		});
+
+		result.querySelector('.pinball-prev-level')?.addEventListener('click', () => {
+			if (currentLevel > 1) currentLevel--;
+			updateLevelDisplay();
+			restartGame();
+		});
+
+		result.querySelector('.pinball-stop')?.addEventListener('click', () => {
 			stopBtn.onclick();
-		};
+		});
 
 		footer.innerHTML = '';
 		footer.appendChild(result);
 		success ? this.playAudio('gamePerfect') : this.playTone(220, 0.5);
+	};
+
+	// Обновляем отображение уровня
+	const updateLevelDisplay = () => {
+		const levelDisplay = header.querySelector('.pinball-level');
+		if (levelDisplay) {
+			levelDisplay.textContent = `Field: ${size}x${size} | Level: ${currentLevel}/${maxLevelForSize}`;
+		}
+	};
+
+	// Перезапуск игры с текущими настройками
+	const restartGame = () => {
+		cells.forEach(c => {
+			c.classList.remove('correct-exit', 'correct-show', 'pin-visible', 'active', 'ball-path', 'wrong-exit');
+			c.dataset.pinType = null;
+			c.style.animationDelay = '';
+		});
+		startBtn.onclick();
 	};
 
 	// Показать все пины
@@ -308,8 +467,17 @@ function gamePinball(sizeStr) {
 		// Сбрасываем предыдущее состояние
 		clearInterval(countdownTimer);
 		cells.forEach(c => {
-			c.classList.remove('pin-visible', 'correct-exit', 'correct-show', 'active');
+			c.classList.remove('pin-visible', 'correct-exit', 'correct-show', 'active', 'ball-path', 'ball-path-change', 'wrong-exit');
 			c.dataset.pinType = null;
+			c.removeAttribute('data-ball-dir-in');
+			c.removeAttribute('data-ball-dir-out');
+			c.style.animationDelay = '';
+
+			// Удаляем все точки
+			const pointsContainer = c.querySelector('.ball-points-container');
+			if (pointsContainer) {
+				pointsContainer.remove();
+			}
 		});
 		if (launchPosition) {
 			cells[launchPosition.index].classList.remove('launch-cell');
@@ -365,6 +533,11 @@ function gamePinball(sizeStr) {
 	const checkAnswer = (selectedIndex) => {
 		const isCorrect = parseInt(selectedIndex) === correctExitPosition;
 
+		// Подсвечиваем выбранную ячейку
+		if (!isCorrect) {
+			cells[selectedIndex].classList.add('wrong-exit');
+		}
+
 		if (isCorrect) {
 			finishGame(true);
 			this.playTone(523, 0.1);
@@ -380,6 +553,6 @@ function gamePinball(sizeStr) {
 	// Собираем интерфейс
 	grid.append(...cells);
 	footer.append(startBtn);
-	container.append(grid, footer);
+	container.append(header, grid, footer);
 	this.applyAnswer(container);
 }
