@@ -503,7 +503,8 @@ body {
 	background: var(--accent);
 }
 
-#pranayama-root .cycles-label {
+#pranayama-root .cycle-pip.current {
+	background: var(--text);
 	margin-left: 6px;
 	font-size: 14px;
 	color: var(--text-muted);

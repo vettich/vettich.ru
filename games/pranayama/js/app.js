@@ -110,9 +110,9 @@
 				values = { ...values, ...s.values };
 			}
 			if (typeof s.hue === 'number') hue = s.hue;
-		if (typeof s.soundEnabled === 'boolean') soundEnabled = s.soundEnabled;
-		if (typeof s.cyclesLimit === 'number') cyclesLimit = s.cyclesLimit;
-		if (typeof s.darkMode === 'boolean') darkMode = s.darkMode;
+			if (typeof s.soundEnabled === 'boolean') soundEnabled = s.soundEnabled;
+			if (typeof s.cyclesLimit === 'number') cyclesLimit = s.cyclesLimit;
+			if (typeof s.darkMode === 'boolean') darkMode = s.darkMode;
 		} catch {
 			// ignore
 		}
@@ -254,7 +254,9 @@
 		pips.innerHTML = '';
 		for (let i = 0; i < cyclesLimit; i++) {
 			const pip = document.createElement('div');
-			pip.className = 'cycle-pip' + (i < cyclesCompleted ? ' done' : '');
+			pip.className = 'cycle-pip'
+				+ (i < cyclesCompleted ? ' done' : '')
+				+ (i === cyclesCompleted ? ' current' : '');
 			pips.appendChild(pip);
 		}
 		label.textContent = `${cyclesCompleted}/${cyclesLimit}`;
@@ -282,6 +284,7 @@
 
 		root.querySelectorAll('.cycle-pip').forEach((pip, i) => {
 			pip.classList.toggle('done', i < cyclesCompleted);
+			pip.classList.toggle('current', i === cyclesCompleted);
 		});
 		const cyclesLabel = $('#cycles-label');
 		if (cyclesLabel && cyclesLimit > 0) {
